@@ -2,42 +2,114 @@
   "release_id": "20261103-admin-ui",
   "timezone": "Asia/Kuala_Lumpur",
   "scope": "Ten admin UX improvements, separate verified build environments, reproducible UI checks",
-  "status": "preparing_qa_checkpoint_git_write_restored",
+  "status": "qa_accepted_frozen_pending_production_authorization",
   "base_sha": "593646f1f9852c96dde6a8f1194ae39cced37e98",
-  "checkpoint_sha": null,
-  "frozen_release_sha": null,
+  "checkpoint_sha": "f6c5a54f2d16e95e044a3fe63771692c2bcbfa52",
+  "frozen_release_sha": "f6c5a54f2d16e95e044a3fe63771692c2bcbfa52",
   "local": {
     "admin_ui_regression": "passed 40 groups",
     "build_config_boundaries": "passed 4 groups",
     "environment_and_artifact_checks": "passed QA and Production",
     "npm_audit": "0 reported vulnerabilities",
     "actual_build_guard_checks": "passed: disabled shared backend and swapped production project both rejected before output",
-    "screenshots": "audits/admin-2026-11-03/ (local only; do not upload screenshots)"
+    "screenshots": "release/20261103-admin-ui/ and audits/admin-2026-11-03/ (local only; do not upload)"
   },
   "qa": {
     "url": "https://masuk.pintumasuk.workers.dev/",
     "worker": "masuk",
     "supabase_project": "meqmyxaxnpntjlerrxcb",
     "previous_verified_deployment": "f150c7b8",
-    "deployment_version": null,
-    "browser_acceptance": "not_performed",
-    "real_android_acceptance": "not_performed: new QA deployment depends on required source checkpoint",
-    "android_device_readiness": "physical Huawei VOG-L29 online; Android 10; Chrome package current version 156.0.8078.79"
+    "deployment_version": "0f68edb0",
+    "browser_acceptance": "passed: real QA session, admin context, filters/pagination/edit return, permission preview only, report processing, audit/raw values, 320px layout",
+    "real_android_acceptance": "passed: physical Huawei VOG-L29, Android 10, Chrome 156.0.8078.79; search/edit return, modules, cross-device pin/report/moderation, hide/restore, audit search",
+    "android_device_readiness": "physical Huawei VOG-L29 online; Android 10; Chrome package current version 156.0.8078.79",
+    "source_sha": "f6c5a54f2d16e95e044a3fe63771692c2bcbfa52",
+    "artifact_sha256": "08cf0eda79135c526cab7c788dec53b15bcbea1c9c15aee4d1cc479e7bb9bf9c",
+    "cleanup": "passed: new synthetic post/reply hidden; post unpinned; report resolved; zero pending reports; public detail discussion count zero; baseline hidden content untouched",
+    "evidence_directory": "release/20261103-admin-ui/ (ignored; screenshots not uploaded)",
+    "acceptance_report": "audits/admin-2026-11-03/QA-ACCEPTANCE.md",
+    "accepted_at": "2026-11-03T23:13:54.768Z",
+    "assets": [
+      {
+        "path": "dist/qa/assets/index--HuywwSY.css",
+        "sha256": "819d00867e64d3e19fef741402f8cc7cf7107ec015e8041a55907eced51a0e54",
+        "bytes": 68794
+      },
+      {
+        "path": "dist/qa/assets/index-CffSzLe9.js",
+        "sha256": "9121718f140d337e438ee4773f98dfb31c447fba67d9f589b3f4ab2121dbd9e5",
+        "bytes": 660340
+      },
+      {
+        "path": "dist/qa/build-info.json",
+        "sha256": "b3235dc7301cc634964536a46c38c878884987e6575dcbf2eb4b8a74126e6c65",
+        "bytes": 217
+      },
+      {
+        "path": "dist/qa/index.html",
+        "sha256": "55715d281e97cda146e1de14910d4685af229899782343b59c214507c7371ab1",
+        "bytes": 620
+      }
+    ]
   },
   "production": {
     "url": "https://my.pintumasuk.workers.dev/",
     "worker": "my",
     "supabase_project": "mlpfzynzawzhrowfkqtr",
-    "configuration": "corrected locally; build verified",
-    "deployment": "not_requested_not_performed"
+    "configuration": "corrected locally; build and artifact preflight verified from frozen application SHA",
+    "deployment": "not_requested_not_performed",
+    "previous_release_record": {
+      "deployment_version": "339c9239",
+      "source_sha": "db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d",
+      "note": "from prior release manifest; reverify current deployment before any future authorized release"
+    },
+    "source_sha": "f6c5a54f2d16e95e044a3fe63771692c2bcbfa52",
+    "local_assets": [
+      {
+        "path": "dist/production/assets/index--HuywwSY.css",
+        "sha256": "819d00867e64d3e19fef741402f8cc7cf7107ec015e8041a55907eced51a0e54",
+        "bytes": 68794
+      },
+      {
+        "path": "dist/production/assets/index-DwNLRq2E.js",
+        "sha256": "695e0f218ec3445c4b95916a69347335b483f3a66d8f2622278abd984a62d49b",
+        "bytes": 660340
+      },
+      {
+        "path": "dist/production/build-info.json",
+        "sha256": "f1406750b5584e89f044df0611a0ea4e464e6d1a148455dbaaad0d2334b3cc12",
+        "bytes": 219
+      },
+      {
+        "path": "dist/production/index.html",
+        "sha256": "26002931eb3c8da20ac8813c0c5b257bf46e60abb291f9450e22245149461f4f",
+        "bytes": 620
+      }
+    ],
+    "smoke": "not_performed_for_this_release"
   },
   "database_migrations": "none; do not rerun initialization or role bootstrap",
   "checkpoint_blocker": {
     "action": "git add scoped source and tests",
     "automatic_approval_review": "rejected twice: workspace .git is explicitly read-only",
     "user_authorization": "received explicit approval to write Git; platform restriction remains",
-    "resolved": "user reconnected; same scoped git add now succeeded",
+    "resolved": "Git write restored; scoped checkpoint and push main succeeded; no bypass",
     "no_workaround_performed": true
   },
-  "known_limits": ["Checkpoint/push and new QA/Android acceptance in progress; previous Git block resolved", "Existing single JS chunk size warning remains"]
+  "known_limits": [
+    "Production release requires separate authorization; not deployed in this task",
+    "Existing single JS chunk size warning remains",
+    "15-second polling/focus refresh for cross-device updates",
+    "Real role or location writes were not performed; corresponding server rejection/conflict coverage is local isolated testing",
+    "IAB native prompt unsupported; live dialog acceptance completed on real Android Chrome"
+  ],
+  "release_sha": "f6c5a54f2d16e95e044a3fe63771692c2bcbfa52",
+  "frozen_at": "2026-11-03T23:13:54.768Z",
+  "remote_branch": "rainsky191919-adcrown/masuk:main",
+  "source_tree_sha256": "31c48e92c457c7e0078b664db77ef1602376e60de51a4e7de2449c13c75a09b2",
+  "recovered_technical_issues": [
+    "Prior Android automatic approval review unavailable due usage limit; same approved path resumed successfully after user continued",
+    "IAB prompt unsupported; existing explicit Android QA authorization used for native Chrome UI",
+    "Read-only Git remote query DNS failed on default network, succeeded on approved network path"
+  ]
 }

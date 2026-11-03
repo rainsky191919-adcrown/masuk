@@ -1,5 +1,16 @@
 # Masuk 项目交接
 
+## 2026-11-04 新版 QA 与真实 Android 验收完成（本段为当前状态）
+
+- 应用 checkpoint `f6c5a54f2d16e95e044a3fe63771692c2bcbfa52` 已推送 main。QA Worker `masuk` 部署 `0f68edb0`；线上 build-info 再次确认该 SHA、QA 项目 `meqmyxaxnpntjlerrxcb`、共享后台开启。QA ZIP SHA256 `08cf0eda79135c526cab7c788dec53b15bcbea1c9c15aee4d1cc479e7bb9bf9c`。
+- 两环境预检通过，源码指纹 `31c48e92c457c7e0078b664db77ef1602376e60de51a4e7de2449c13c75a09b2` 保持不变；源码、测试与构建配置相对应用 checkpoint 无变更。真实环境文件、构建产物和截图未提交。
+- 新版桌面 QA 覆盖登录保留、紧凑页头、筛选/分页、编辑路径及返回保留、权限摘要预览、审计检索/原始值、320px 无横向溢出。真实 Android 为 Huawei VOG-L29 / Android 10 / Chrome 156.0.8078.79，覆盖模块直达、地点搜索/编辑返回、跨设备内容与置顶同步、举报、隐藏/恢复及审计卡片筛选。
+- 本轮 `[QA_UI_f6c5a54]` 合成测试帖与回复已隐藏、未置顶；举报 resolved，待处理 0；最终公开详情讨论 0。原有隐藏测试内容未改动。保留本轮审计轨迹（共载入 9 条），无真实角色调整或地点资料保存。
+- 上轮 Android 操作被自动审批服务用量限制中止，未绕过；用户继续后原受审路径恢复并完成验收。IAB 不支持业务原生 prompt，相关交互由已授权的 Android Chrome 完成；手机输入法曾转换举报原因中的字母数字，实际入库原因已核对，测试对象由唯一标题确认。
+- **冻结应用 Release SHA 为 `f6c5a54f2d16e95e044a3fe63771692c2bcbfa52`，时间 2026-11-04 07:13（UTC+8）。** 后续交接文档提交不改变该应用 SHA；正式构建必须检出此冻结版本并使用独立 Production 配置。
+- 详见 `audits/admin-2026-11-03/QA-ACCEPTANCE.md` 与 `releases/20261103-admin-ui/manifest.json`。截图仅在忽略目录 `release/20261103-admin-ui/`。
+- 本轮未发布 Production。上一已发布应用记录为 `db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d` / `339c9239`，并非 Hello World；正式发布前应重新核对当前部署。下一步仅在用户单独授权后，从冻结 SHA 发布正式环境并最小 smoke。不要重跑数据库初始化或角色引导。
+
 ## 2026-11-03 Git写入已恢复，继续新版QA流程
 
 - 用户告知“我已连接，再试一次”，重试同一范围git add成功，自动审批未再拦截。已核对暂存内容，仅为本次源码、测试、示例配置、说明及Manifest；无实际.env、截图、构建产物或依赖目录，真实公开客户端配置值未进入暂存。

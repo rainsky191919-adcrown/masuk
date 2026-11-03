@@ -1,5 +1,11 @@
 # Masuk 部署说明
 
+## 当前状态：新版 QA / 真机验收通过，待单独授权正式发布（2026-11-04）
+
+应用源码已在 `f6c5a54f2d16e95e044a3fe63771692c2bcbfa52` checkpoint 并推送，QA 部署 `0f68edb0` 完成桌面与 Huawei VOG-L29（Android 10 / Chrome 156.0.8078.79）验收。测试帖和回复均已隐藏，测试举报已处理，待处理为 0；无真实角色或地点变更。已冻结同一应用 SHA；当前文档提交不构成新的应用版本。
+
+两环境独立构建与预检均通过。正式发布须使用冻结 SHA 的独立检出目录与 Production 配置，上传 `dist/production` 内容；不从后续文档提交重建并冒充已验收 SHA。本轮未发布正式站；上次已发布版本见 `releases/20261103-admin-community/manifest.json`，下文 Hello World 等旧状态是历史记录。新版证据及限制见 `audits/admin-2026-11-03/QA-ACCEPTANCE.md` 和本轮 Manifest。下一步需用户单独授权正式发布，再核对目标与回滚版本，完成正式最小 smoke。无新数据库迁移，不重跑初始化或角色引导。
+
 ## 当前进度：Git写入恢复，准备新版QA checkpoint（2026-11-03）
 
 用户重新连接后，同一范围Git暂存已成功。此前只读阻断记录保留为历史；继续按checkpoint/push→从该SHA重建QA→QA发布→浏览器/真实Android验收执行。两环境配置及本地检查已通过，Production仍不在本次发布范围。
