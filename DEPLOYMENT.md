@@ -1,5 +1,11 @@
 # Masuk 部署说明
 
+## 当前已发布版本（2026-11-03）
+
+共享管理后台已完成本地验证、QA 浏览器与真实 Android 验收、冻结源码及 Production 最小 smoke。应用 SHA `db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d`；QA 部署 `f150c7b8`、Production 部署 `339c9239`。指定邮箱已在两个独立环境的真实账号中分别获得 super admin。下文“本地实现，待云端上线”及“Production 占位页”是历史准备说明，最终状态以 HANDOFF / Release Manifest 为准。
+
+两环境已经执行本次初始化/增量脚本，不要重复建表。后续变更继续遵守固定流程。Production 的平台自动 RLS 函数额外收紧了默认执行权限：`REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;`。这仅限制客户端直接执行平台事件辅助函数，自动 RLS 事件触发器保持启用，应用 RPC 不受影响。安全建议复查为 0 errors；泄漏密码保护默认关闭的警告仍存在，前端登录使用 Google OAuth。
+
 ## 管理与共享后台部署增量（2026-11-03）
 
 以下代码已在本地实现；云端上线状态以 HANDOFF 和本次 Release Manifest 为准。

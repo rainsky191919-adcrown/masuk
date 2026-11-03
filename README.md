@@ -1,5 +1,14 @@
 # Masuk? · Guardhouse Intel
 
+## 当前发布状态（2026-11-03，优先于下文历史演示说明）
+
+- QA：https://masuk.pintumasuk.workers.dev/；正式版：https://my.pintumasuk.workers.dev/。分别使用独立 Supabase 项目。
+- 已发布服务端角色与共享内容：帖子/回复、帮助标记、反馈、地点共同编辑、历史版本和版本认可；写入后刷新，跨设备每 15 秒及窗口聚焦同步。旧浏览器内容不会自动上传。
+- 用 `rainsky191919@gmail.com` Google 登录可进入「后台管理」；该已验证账号在两环境分别为 super admin。普通用户不能通过改名、邮箱显示或 metadata 获得管理权限。
+- 后台支持地点复核/编辑、置顶、帖子/回复/反馈隐藏和恢复、举报处理/驳回及操作审计；super admin 可管理已验证账号的管理员角色，至少保留一位 super admin。
+- 本次应用 Release SHA 为 `db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d`。发布/验收证据及状态见 HANDOFF.md 和 `releases/20261103-admin-community/manifest.json`；固定发布流程见 DEPLOYMENT.md。
+- 本地演示仍可在不配置 Supabase 时使用；下文涉及浏览器存储、演示管理员及仅本机功能的内容描述的是该模式。生产共享模式显式使用 `VITE_SHARED_BACKEND=true`，只连接所配置环境，不会在云端错误时伪装本机保存为成功。
+
 给 Grab、inDrive、Foodpanda 和 ShopeeFood 司机使用的 Johor / Skudai 住宅区、公寓 Guardhouse 门禁情报板。
 
 ## 本地运行

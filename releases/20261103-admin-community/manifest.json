@@ -1,7 +1,7 @@
 {
   "release_id": "20261103-admin-community",
   "timezone": "Asia/Kuala_Lumpur",
-  "status": "qa_passed_release_frozen",
+  "status": "released",
   "scope": "Server roles, shared community/location versions, moderation and reports",
   "base_sha": "b496cf672f9ba489a60ee84718b54ec061dc3ec3",
   "checkpoint_sha": "db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d",
@@ -36,17 +36,22 @@
     "url": "https://my.pintumasuk.workers.dev/",
     "worker": "my",
     "supabase_project": "mlpfzynzawzhrowfkqtr",
-    "deployment_version": null,
-    "source_sha": null,
-    "artifact_sha256": null,
-    "smoke": "pending",
-    "previous_deployment": "737dcad3 (Hello World placeholder)"
+    "deployment_version": "339c9239",
+    "source_sha": "db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d",
+    "artifact_sha256": "3f41baa141976e4ab7eae6054b5411db7ebdf8ee26b49ede42c5163d24169cc6",
+    "smoke": "passed: homepage, 21 independent locations/details, Google owner login, server super admin/dashboard, refresh persistence, RLS and no QA community data",
+    "previous_deployment": "737dcad3 (Hello World placeholder)",
+    "super_admin": "rainsky191919@gmail.com (verified Production account; explicit action-time confirmation)",
+    "security_advisor": "0 errors; 1 warning: leaked-password protection disabled (Google OAuth frontend); 9 private-table/no-policy info notices by design",
+    "platform_configuration": "REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated; automatic RLS event trigger remains enabled"
   },
   "known_limits": [
-    "Production rollout has not run",
     "Cross-device sync polls every 15 seconds and on window focus",
     "No automatic import of legacy browser data",
-    "QA test post/reply hidden; audit retained"
+    "QA test post/reply hidden; audit retained",
+    "Production smoke intentionally did not create community content",
+    "Supabase leaked-password-protection warning remains; application uses Google OAuth"
   ],
-  "frozen_at": "2026-11-03T13:05:26.9997318+08:00"
+  "frozen_at": "2026-11-03T13:05:26.9997318+08:00",
+  "completed_at": "2026-11-03T13:20:51.7891936+08:00"
 }

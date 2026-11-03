@@ -1,5 +1,23 @@
 # Masuk 项目交接
 
+## 2026-11-03 管理与共享后台已发布完成（最终最新状态）
+
+- 发布严格按 Local 开发/完整验证 → HANDOFF → Git checkpoint + push main → QA 发布 → 浏览器与真实 Android 验收 → 冻结 SHA → Production → 最小 smoke → 交接/Manifest 执行。
+- 应用 Release SHA：`db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d`。之后 main 上的提交仅更新交接/Release Manifest，不改变该已验收应用源码。QA 部署 `f150c7b8`；Production 部署 `339c9239`，Ready、100%。
+- QA：https://masuk.pintumasuk.workers.dev/ → Supabase `meqmyxaxnpntjlerrxcb`；正式版：https://my.pintumasuk.workers.dev/ → Supabase `mlpfzynzawzhrowfkqtr`。两环境的数据库/认证/浏览器存储隔离。
+- `rainsky191919@gmail.com` 已在两环境的真实已验证账号中分别授予 super admin，均有操作时明确确认。QA UUID `5e8fe33b-376c-4a4b-985e-0c69c409782f`；Production UUID `df4d6c93-2bfe-44d5-81b0-ce9aa54fa7f9`。服务端角色表是授权依据，不是邮箱/显示名或 user_metadata。
+- Production 初始化已执行：21 条公开种子、21 个历史第一版、全部表 RLS 启用；帖子/回复/举报/反馈均为 0，未导入 QA 测试内容或用户。不要重复执行 initial_deployment.sql 或本次增量迁移。
+- 用户已亲自完成 Production Google OAuth 凭据配置；真实登录返回 `my.pintumasuk.workers.dev` 成功，后台显示 Super admin 和指定邮箱，刷新可恢复会话。正式版 Site URL/精确允许回跳均已设为正式网址。
+- 共享帖子、回复、帮助标记、到访反馈、地点共同编辑、版本历史和版本认可现已使用服务端 RPC；跨设备在写入后、窗口聚焦及每 15 秒刷新。旧本机内容不会自动上传，仍保留。此前“这些功能仅本机”的历史描述已过时。
+- 管理后台支持地点复核/修改、帖子置顶、帖子/回复/反馈隐藏与恢复、举报接收/处理/驳回及服务端审计；super admin 可按已验证邮箱分配/撤销管理员权限，禁止降级最后一位 super admin。
+- QA 实测闭环：桌面真实发帖/回复/帮助，Android 10 Huawei VOG-L29 读取同一内容并举报，桌面审核隐藏，手机后台隐藏回复后桌面同步。测试帖/回复已隐藏，公开列表恢复为空，历史审计保留。
+- Production smoke 通过：主页/21 地点/详情/独立数据库/Google 登录/真实 super admin 后台/刷新恢复/表 RLS 与角色及举报直接访问限制。正式版未执行社区写入测试，遵守最小 smoke 范围。
+- Security Advisor：0 errors；收紧了控制台自动生成的 `public.rls_auto_enable()` 对 public/anon/authenticated 的 EXECUTE（事件触发器保持启用），两项函数权限警告已消失。剩余 1 项平台警告为 Leaked Password Protection Disabled；本站前端使用 Google OAuth，不使用密码登录；9 项私有表无策略提示对应“无直接客户端访问，仅经授权 RPC”的设计，不能为了消提示开放表策略。
+- 构建包 SHA256：QA `c9cd041ad3962ac3f6c4abb92eb180aae9b3baad22bf83b35ec0d6a303f46220`；Production `3f41baa141976e4ab7eae6054b5411db7ebdf8ee26b49ede42c5163d24169cc6`。Production 从冻结 git archive 独立构建，环境配置仅 URL 与公开 publishable key，不含服务端密钥。
+- 证据目录 `release/20261103-admin-community/`；重点 `production-deployment-ready.png`、`production-db-smoke.png`、`production-owner-login.png`、`production-super-admin-dashboard.png`、`production-security-advisor.png` 及 Android/QA 截图。不得上传实际环境文件/截图到仓库。
+- 本次明确创建的 `masuk-admin-*` 测试容器和网络已清理；本机预览进程检查未发现仍运行实例；手机临时 `/sdcard/masuk-qa-screen.png` 与 `masuk-qa-ui.xml` 已删除，项目内证据保留。
+- 回滚：Cloudflare 前端可回滚至 QA 前版 `dd999a07`、Production 前版占位 `737dcad3`。数据库为增量结构，回滚前端不应自动删除历史、用户内容或角色；当前新结构兼容旧公开 locations 读取。
+
 ## 2026-11-03 QA 实机验收通过、Release SHA 已冻结（最新）
 
 - 已通过真实 Huawei VOG-L29 / Android 10 的 Google owner 登录、读取桌面测试帖/回复、提交举报、进入 Super admin 后台并隐藏测试回复；桌面收到手机举报并处理，同时手机/桌面双向同步清理状态。QA 测试帖和回复均已隐藏，审计保留，未修改真实地点资料。
