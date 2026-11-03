@@ -74,3 +74,9 @@ UGC 建议先写入待审核表或通过 Edge Function 处理，避免匿名用�
 相关文件：`src/lib/revisions.js`、`src/components/AccuracyPanel.jsx`。回归测试 `work/accuracy_smoke.py` 使用临时浏览器验证两标签页冲突、版本认可隔离和保存失败。
 
 验证：`npm run build`；`node --test work/community_logic.test.mjs`；已安装 Python Playwright 的环境可运行 `work/community_smoke.py`，该测试使用独立临时浏览器，不会写入云端。
+
+## 2026-11-03 登录部署更新
+
+生产构建现已接入 Supabase Google OAuth（PKCE）、会话恢复及退出，并读取云端公开地点。配置参见 DEPLOYMENT.md 与 .env.example。Google 客户端密钥只保存在 Supabase，前端只使用公开发布密钥。生产身份不从演示账户或显示名称获得管理员权限。
+
+上文涉及演示登录的描述仅适用于未配置 Supabase 的本地开发。资料编辑、讨论、反馈、版本认可仍是浏览器本地功能，尚未跨设备共享。当前已有独立云端 locations 表，不要对已部署项目重复执行初始化建表脚本。
