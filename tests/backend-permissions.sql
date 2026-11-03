@@ -1,0 +1,73 @@
+\set ON_ERROR_STOP on
+begin;
+-- Helpers run with the caller's role and must not accidentally bypass authorization.
+create function public.test_assert(ok boolean,label text) returns void language plpgsql as $$ begin if ok is distinct from true then raise exception 'FAIL: %',label; end if; raise notice 'PASS: %',label; end $$;
+create function public.test_denied(action text,payload jsonb default '{}') returns void language plpgsql as $$
+begin
+  begin perform public.masuk_command(action,payload); exception when others then
+    if sqlstate not in ('42501','40001','23514') and sqlerrm not in ('LAST_SUPER_ADMIN','VERIFIED_ACCOUNT_NOT_FOUND','TARGET_NOT_FOUND') then raise; end if;
+    raise notice 'PASS: denied % (%)',action,sqlerrm; return;
+  end;
+  raise exception 'FAIL: permitted %',action;
+end $$;
+grant execute on function public.test_assert(boolean,text),public.test_denied(text,jsonb) to anon,authenticated;
+set local role anon;
+select public.test_assert(public.masuk_command('role')->>'role'='guest','anonymous role');
+select public.test_assert(jsonb_array_length(public.masuk_command('locations'))=21,'anonymous cloud locations');
+select public.test_denied('post','{"locationId":"skudai-001","type":"提问","title":"x","body":"x"}');
+select public.test_denied('admin');
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
+select public.test_assert(public.masuk_command('role')->>'role'='user','metadata cannot grant super admin');
+select public.test_denied('set_role','{"email":"rider@example.test","role":"super_admin","reason":"x"}');
+select public.test_denied('admin');
+select public.masuk_command('post','{"locationId":"skudai-001","type":"经验分享","title":"Test post","body":"Test body","service":"外卖配送","authorId":"00000000-0000-0000-0000-000000000001"}') as post_result \gset
+select public.test_assert(public.masuk_command('feed')->'posts'->0->>'authorId'='00000000-0000-0000-0000-000000000002','server owns author identity');
+select public.masuk_command('reply',jsonb_build_object('id',(:'post_result'::jsonb)->>'id','body','Reply from owner'));
+select public.masuk_command('feedback','{"locationId":"skudai-001","level":2,"visitedAt":"2026-01-01T12:00:00Z","service":"外卖配送","note":"Test","requirements":{}}');
+select public.masuk_command('feedback','{"locationId":"skudai-001","level":3,"visitedAt":"2026-01-02T12:00:00Z","service":"外卖配送","note":"Updated","requirements":{}}');
+select public.test_assert(jsonb_array_length(public.masuk_command('feed')->'feedback')=1,'feedback one per actual driver');
+select public.test_denied('moderate',jsonb_build_object('id',public.masuk_command('feed')->'feedback'->0->>'id','targetType','feedback','hidden',true,'reason','Unauthorized hide'));
+select public.test_denied('feedback','{"locationId":"skudai-001","level":2,"visitedAt":"2099-01-01","service":"x","note":"","requirements":{}}');
+select public.test_denied('pin',jsonb_build_object('id',(:'post_result'::jsonb)->>'id','enabled',true));
+select public.test_denied('moderate',jsonb_build_object('id',(:'post_result'::jsonb)->>'id','targetType','post','hidden',true,'reason','x'));
+select public.masuk_command('approve','{"id":"skudai-001","expectedVersion":1,"enabled":true}');
+select public.masuk_command('save_location','{"id":"skudai-001","expectedVersion":1,"reason":"Entrance updated","name":"Updated name","area":"Skudai","address":"A road","entry_requirements":{},"tips":"New info"}');
+select public.test_denied('save_location','{"id":"skudai-001","expectedVersion":1,"reason":"Stale overwrite","name":"Stale","area":"Skudai","address":"A road","entry_requirements":{}}');
+select public.test_denied('approve','{"id":"skudai-001","expectedVersion":1,"enabled":true}');
+select public.test_assert((select (x->>'revision_number')::int=2 and jsonb_array_length(x->'accuracy_votes')=0 and jsonb_array_length(x->'revisions'->0->'approvals')=1 from jsonb_array_elements(public.masuk_command('locations')) x where x->>'id'='skudai-001'),'new version clears current votes and retains historical votes');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',true);
+select public.test_assert(jsonb_array_length(public.masuk_command('feed')->'posts')=1,'second identity reads shared post');
+select public.test_denied('delete_post',jsonb_build_object('id',(:'post_result'::jsonb)->>'id'));
+select public.masuk_command('helpful',jsonb_build_object('id',(:'post_result'::jsonb)->>'id','enabled',true));
+select public.masuk_command('helpful',jsonb_build_object('id',(:'post_result'::jsonb)->>'id','enabled',true));
+select public.test_assert(jsonb_array_length(public.masuk_command('feed')->'posts'->0->'helpful')=1,'helpful retry idempotent');
+select public.masuk_command('report',jsonb_build_object('id',(:'post_result'::jsonb)->>'id','targetType','post','reason','Spam'));
+select public.masuk_command('report',jsonb_build_object('id',(:'post_result'::jsonb)->>'id','targetType','post','reason','Spam'));
+select public.test_denied('report','{"id":"not-a-place","targetType":"location","reason":"x"}');
+select public.test_denied('resolve_report','{"id":"00000000-0000-0000-0000-000000000001","status":"resolved","reason":"x"}');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
+select public.test_assert(public.masuk_command('role')->>'role'='super_admin','verified owner is super admin');
+select public.masuk_command('set_role','{"email":"moderator@example.test","role":"admin","reason":"Moderation duties"}');
+select public.test_denied('set_role','{"email":"rainsky191919@gmail.com","role":"user","reason":"Remove last owner"}');
+select public.test_denied('set_role','{"email":"unverified@example.test","role":"admin","reason":"x"}');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000004',true);
+select public.test_assert(public.masuk_command('role')->>'role'='admin','server role assignment effective without JWT refresh');
+select public.test_denied('set_role','{"email":"rider@example.test","role":"admin","reason":"x"}');
+select public.test_assert(jsonb_array_length(public.masuk_command('admin')->'reports')=1,'reports deduplicated and visible to admin');
+select public.test_assert(jsonb_array_length(public.masuk_command('admin')->'roles')=0,'admin cannot enumerate role emails');
+select public.masuk_command('resolve_report',jsonb_build_object('id',public.masuk_command('admin')->'reports'->0->>'id','status','resolved','reason','Confirmed spam','hide',true));
+select public.test_assert(jsonb_array_length(public.masuk_command('feed')->'posts')=0,'resolved and hidden post removed from public feed');
+select public.masuk_command('moderate',jsonb_build_object('id',(:'post_result'::jsonb)->>'id','targetType','post','hidden',false,'reason','Restore after review'));
+select public.test_assert(jsonb_array_length(public.masuk_command('feed')->'posts')=1,'moderation reversible');
+select public.test_assert(jsonb_array_length(public.masuk_command('admin')->'audit')>=4,'server audit persists role and moderation actions');
+select public.masuk_command('moderate',jsonb_build_object('id',public.masuk_command('feed')->'feedback'->0->>'id','targetType','feedback','hidden',true,'reason','Inaccurate feedback'));
+select public.test_assert(jsonb_array_length(public.masuk_command('feed')->'feedback')=0,'hidden feedback excluded from public score inputs');
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000005',true);
+select public.test_denied('post','{"locationId":"skudai-001","type":"提问","title":"x","body":"x"}');
+reset role;
+select public.test_assert(not has_table_privilege('authenticated','masuk_private.roles','INSERT'),'no direct role writes');
+select public.test_assert(not has_table_privilege('anon','masuk_private.reports','SELECT'),'no public reporter disclosure');
+select public.test_assert(not exists(select 1 from pg_tables where schemaname='masuk_private' and not rowsecurity),'RLS enabled on every private table');
+rollback;

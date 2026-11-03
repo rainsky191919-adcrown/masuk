@@ -1,0 +1,45 @@
+{
+  "release_id": "20261103-admin-community",
+  "timezone": "Asia/Kuala_Lumpur",
+  "status": "local_validation",
+  "scope": "Server roles, shared community/location versions, moderation and reports",
+  "base_sha": "b496cf672f9ba489a60ee84718b54ec061dc3ec3",
+  "checkpoint_sha": null,
+  "release_sha": null,
+  "local": {
+    "fresh_database_permissions": "passed",
+    "shared_browser_real_local_rpc": "passed",
+    "legacy_community_regression": "passed",
+    "legacy_revision_regression": "passed",
+    "responsive_widths": [320, 390, 1440],
+    "screenshots": "work/shared-backend/",
+    "release_config_build": "passed (QA configuration)",
+    "community_logic_tests": "passed 4/4"
+  },
+  "qa": {
+    "url": "https://masuk.pintumasuk.workers.dev/",
+    "worker": "masuk",
+    "supabase_project": "meqmyxaxnpntjlerrxcb",
+    "deployment_version": null,
+    "source_sha": null,
+    "artifact_sha256": "c9cd041ad3962ac3f6c4abb92eb180aae9b3baad22bf83b35ec0d6a303f46220",
+    "browser_acceptance": "pending",
+    "android_acceptance": "pending",
+    "android_device": "Huawei VOG-L29"
+  },
+  "production": {
+    "url": "https://my.pintumasuk.workers.dev/",
+    "worker": "my",
+    "supabase_project": "mlpfzynzawzhrowfkqtr",
+    "deployment_version": null,
+    "source_sha": null,
+    "artifact_sha256": null,
+    "smoke": "pending",
+    "previous_deployment": "737dcad3 (Hello World placeholder)"
+  },
+  "known_limits": [
+    "Cloud rollout and verified-owner bootstrap have not run",
+    "Cross-device sync polls every 15 seconds and on window focus",
+    "No automatic import of legacy browser data"
+  ]
+}

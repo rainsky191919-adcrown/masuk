@@ -8,3 +8,6 @@ release/
 .wrangler/
 .DS_Store
 *.log
+supabase/.temp/
+__pycache__/
+*.pyc

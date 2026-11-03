@@ -34,6 +34,8 @@ import { revisionOf, differences, nextRevision, toggleApproval, savePlace, withP
 import { PLACES_KEY, readLocalPlaces, mergeLocalPlaces, validPoint, navigationUrl, nearDuplicates } from './lib/placeStorage'
 import LocationDetail, { Friendliness } from './components/LocationDetail'
 import { COMMUNITY_KEY, readCommunity, requirement, summarize } from './lib/community'
+import { sharedBackend, command, canModerate, cloudError } from './lib/sharedBackend'
+import CloudAdmin from './components/CloudAdmin'
 
 function formatUpdated(dateString) {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -58,7 +60,7 @@ function copyTextFor(location, feedback) {
 }
 
 function App() {
-  const [community, setCommunity] = useState(readCommunity)
+  const [community, setCommunity] = useState(() => sharedBackend ? { posts: [], feedback: [] } : readCommunity())
   const [selectedLocationId, setSelectedLocationId] = useState(null)
   const [browseScroll, setBrowseScroll] = useState(0)
   function saveCommunity(next) {
@@ -69,7 +71,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [area, setArea] = useState('全部区域')
   const [difficulty, setDifficulty] = useState('all')
-  const [locations, setLocations] = useState(() => mergeLocalPlaces(mockLocations))
+  const [locations, setLocations] = useState(() => sharedBackend ? [] : mergeLocalPlaces(mockLocations))
   const selectedLocation = locations.find(item => item.id === selectedLocationId)
   const [dataSource, setDataSource] = useState(hasSupabaseConfig ? 'connecting' : 'mock')
   const [isLoadingLocations, setIsLoadingLocations] = useState(hasSupabaseConfig)
@@ -87,11 +89,42 @@ function App() {
   })
   const [authBusy, setAuthBusy] = useState(hasSupabaseConfig)
   const [reviewIds, setReviewIds] = useState([])
-  const isAdminUser = currentUser?.role === 'admin'
+  const isAdminUser = canModerate(currentUser)
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 20
   const [toast, setToast] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  async function refreshShared() {
+    const [feed, places] = await Promise.all([command('feed'), fetchLocations()])
+    if (places.error) throw places.error
+    setCommunity(feed); setLocations(places.data); setDataSource('supabase')
+  }
+  async function communityAction(action, payload) {
+    try { await command(action, payload); await refreshShared(); return true }
+    catch (error) { showToast(cloudError(error)); return false }
+  }
+  useEffect(() => {
+    if (!sharedBackend) return
+    let active = true, loading = false
+    async function refresh() {
+      if (loading) return
+      loading = true
+      try {
+        const [role, feed, places] = await Promise.all([command('role'), command('feed'), fetchLocations()])
+        if (!active) return
+        if (places.error) throw places.error
+        setCurrentUser(user => user ? { ...user, role: role.role } : null)
+        setCommunity(feed); setLocations(places.data); setDataSource('supabase')
+      } catch (error) {
+        if (active) { setDataSource('error'); setCurrentUser(user => user ? { ...user, role: 'user' } : null); showToast(cloudError(error)) }
+      } finally { loading = false; if (active) setIsLoadingLocations(false) }
+    }
+    refresh()
+    const timer = setInterval(refresh, 15000)
+    window.addEventListener('focus', refresh)
+    return () => { active = false; clearInterval(timer); window.removeEventListener('focus', refresh) }
+  }, [currentUser?.id])
 
   useEffect(() => {
     if (!supabase) return
@@ -124,6 +157,7 @@ function App() {
 
   useEffect(() => {
     const syncLocalCommunity = event => {
+      if (sharedBackend) return
       if (event.key === COMMUNITY_KEY) setCommunity(readCommunity())
       if (event.key === PLACES_KEY) setLocations(current => mergeLocalPlaces(current))
     }
@@ -135,7 +169,7 @@ function App() {
     let isMounted = true
 
     async function loadLocations() {
-      if (!hasSupabaseConfig) return
+      if (!hasSupabaseConfig || sharedBackend) return
 
       const { data, error } = await fetchLocations()
       if (!isMounted) return
@@ -153,6 +187,7 @@ function App() {
 
     loadLocations()
     const unsubscribe = subscribeToLocations(async () => {
+      if (sharedBackend) return
       const { data, error } = await fetchLocations()
       if (!isMounted || error || !data) return
       setLocations(mergeLocalPlaces(data))
@@ -292,7 +327,24 @@ function App() {
     }
     setIsSavingPlace(true)
     try {
-      const result = await withPlaceLock(() => {
+      let result
+      if (sharedBackend) {
+        if (editingLocation && !differences(editingLocation, updatedLocation).length) return showToast('资料没有变化，无需重复保存')
+        try {
+          await command('save_location', { ...updatedLocation, expectedVersion: editingLocation?.revision_number ?? null, reason: reason || '创建地点' })
+        } catch (error) {
+          if (error.message?.includes('VERSION_CONFLICT')) {
+            const latest = await fetchLocations()
+            if (latest.error) throw latest.error
+            setLocations(latest.data)
+            setEditConflict({ latest: latest.data.find(row => row.id === editingLocation.id), draft: updatedLocation })
+          }
+          throw error
+        }
+        const latest = await fetchLocations()
+        if (latest.error) throw latest.error
+        result = { saved: latest.data.find(row => row.id === updatedLocation.id) }
+      } else result = await withPlaceLock(() => {
         const latest = editingLocation ? readLocalPlaces().find(row => row.id === editingLocation.id) || locations.find(row => row.id === editingLocation.id) : null
         if (editingLocation && (!latest || revisionOf(latest) !== revisionOf(editingLocation))) return { conflict: latest }
         if (latest && !differences(latest, updatedLocation).length) return { unchanged: true }
@@ -314,7 +366,7 @@ function App() {
       setArea('全部区域')
       setDifficulty('all')
       showToast(editingLocation ? '资料已更新，立即生效；新版本重新累计认可' : '地点已保存，可以开始讨论')
-    } catch { showToast('无法保存，请检查浏览器存储后重试；表单内容仍保留') }
+    } catch (error) { showToast(sharedBackend ? cloudError(error) : '无法保存，请检查浏览器存储后重试；表单内容仍保留') }
     finally { setIsSavingPlace(false) }
   }
 
@@ -329,6 +381,11 @@ function App() {
 
   async function approveLocation(location, visitDate) {
     if (!currentUser) return showToast('请先点击顶部登录，再认可资料')
+    if (sharedBackend) {
+      const enabled = !location.accuracy_votes?.some(vote => vote.userId === currentUser.id)
+      if (await communityAction('approve', { id: location.id, expectedVersion: location.revision_number, enabled, visitDate })) showToast(enabled ? '已认可当前版本资料' : '已取消认可')
+      return
+    }
     if (visitDate && (!/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || new Date(visitDate + 'T00:00:00') > new Date())) return showToast('到访日期不能晚于今天')
     try {
       const result = await withPlaceLock(() => {
@@ -427,7 +484,7 @@ function App() {
         </section>}
 
         {activeView === 'detail' && selectedLocation ? (
-          <LocationDetail key={selectedLocation.id} location={selectedLocation} community={community} saveCommunity={saveCommunity} user={currentUser} onLogin={handleGoogleLogin} copyRules={copyRules} showToast={showToast} onEdit={openEdit} onApprove={approveLocation} onBack={() => { setActiveView('browse'); requestAnimationFrame(() => window.scrollTo(0, browseScroll)) }} />
+          <LocationDetail key={selectedLocation.id} location={selectedLocation} community={community} saveCommunity={saveCommunity} shared={sharedBackend} onAction={communityAction} user={currentUser} onLogin={handleGoogleLogin} copyRules={copyRules} showToast={showToast} onEdit={openEdit} onApprove={approveLocation} onBack={() => { setActiveView('browse'); requestAnimationFrame(() => window.scrollTo(0, browseScroll)) }} />
         ) : activeView === 'browse' ? (
           <BrowseView
             onCreate={() => { setEditingLocation(null); setEditConflict(null); setActiveView('contribute') }}
@@ -450,7 +507,7 @@ function App() {
             showToast={showToast}
           />
         ) : activeView === 'admin' ? (
-          <AdminView locations={locations} reviewIds={reviewIds} currentUser={currentUser} onEdit={openEdit} onDelete={deleteLocation} onToggleReview={toggleReview} />
+          sharedBackend ? <CloudAdmin user={currentUser} locations={locations} onEdit={openEdit} onChanged={refreshShared} showToast={showToast} /> : <AdminView locations={locations} reviewIds={reviewIds} currentUser={currentUser} onEdit={openEdit} onDelete={deleteLocation} onToggleReview={toggleReview} />
         ) : (
           <ContributeView conflict={editConflict} isSaving={isSavingPlace} onReloadLatest={() => { if (editConflict?.latest) { setEditingLocation(editConflict.latest); setEditConflict(null) } }} key={(editingLocation?.id || 'new') + (editingLocation ? revisionOf(editingLocation) : '')} locations={locations} initialName={query} onUseExisting={(location) => { setSelectedLocationId(location.id); setActiveView('detail'); window.scrollTo(0, 0) }} initialLocation={editingLocation} onSubmit={handleContribution} onCancel={() => { setEditingLocation(null); setEditConflict(null); setActiveView('browse') }} />
         )}

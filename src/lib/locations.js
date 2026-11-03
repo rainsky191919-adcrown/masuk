@@ -1,4 +1,5 @@
 import { hasSupabaseConfig, supabase } from './supabase'
+import { sharedBackend, command } from './sharedBackend'
 
 function normalizeLocation(row) {
   const requirements = row.entry_requirements || {}
@@ -23,6 +24,10 @@ function normalizeLocation(row) {
 }
 
 export async function fetchLocations() {
+  if (sharedBackend) {
+    try { return { data: (await command('locations')).map(normalizeLocation), error: null } }
+    catch (error) { return { data: null, error } }
+  }
   if (!hasSupabaseConfig) {
     return { data: null, error: new Error('Supabase 环境变量尚未配置') }
   }
