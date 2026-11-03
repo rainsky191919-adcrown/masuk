@@ -1,5 +1,28 @@
 # Masuk 部署说明
 
+## 当前进度：Git写入恢复，准备新版QA checkpoint（2026-11-03）
+
+用户重新连接后，同一范围Git暂存已成功。此前只读阻断记录保留为历史；继续按checkpoint/push→从该SHA重建QA→QA发布→浏览器/真实Android验收执行。两环境配置及本地检查已通过，Production仍不在本次发布范围。
+
+## 新版后台配置已纠正，QA等待源码checkpoint（2026-11-03）
+
+- 用户已要求纠正两环境配置并进行新版QA/真实Android验收。根目录`.env.qa`与`.env.production`现已从核实身份的项目页面分别配置，仅含各项目公开publishable key，并启用共享后台；真实值不得提交。旧配置已备份在忽略目录。
+- `npm run build:qa`输出`dist/qa`；`npm run build:production`（或`npm run build`）输出`dist/production`。**仅上传目标子目录内容，不上传整个dist父目录或历史根级文件。** 两者由Vite构建前核对后端项目与共享标志，不匹配即失败。
+- `npm run check:qa`与`npm run check:production`分别校验对应产物、公开构建信息及源SHA；报告为`audits/admin-2026-11-03/PREFLIGHT-qa.json`和`PREFLIGHT-production.json`。旧`PREFLIGHT.json`保留为之前拒绝放行的历史记录。
+- 清洁检出后`npm ci`、`npm run test:build-config`及`npm run test:admin`可复现配置边界与40组隔离回归；夹具不用于发布。例子见`.env.qa.example`、`.env.production.example`，填写时只用对应项目的公开客户端密钥。
+- 新版仍须完成源码checkpoint/push、QA发布、浏览器/真实Android验收与冻结；正式发布不包含在当前请求中。最新状态见HANDOFF及`releases/20261103-admin-ui/manifest.json`。
+- 当前checkpoint被应用工作区的Git只读限制拦截。用户已明确允许写入Git，但自动审批仍拒绝暂存；不得通过其他工具/仓库绕过，也不得跳过checkpoint直接上传。需实际解除平台限制或由用户完成提交推送后继续。详见`audits/admin-2026-11-03/CONFIG-CORRECTION.md`。
+
+## 本轮后台体验优化：上线前检查未通过（2026-11-03，尚未发布）
+
+10项后台优化及整体验收补修仍在本地，不能沿用下文旧版本的QA/Android验收结论。完整结果见 `audits/admin-2026-11-03/ACCEPTANCE.md`，本次未提交或发布。
+
+- 当前根目录 `.env.production` 是遗留配置：实际指向QA，且未启用共享后台。默认 `npm run build` 虽能成功，但**该产物不得上传至正式 Worker `my`**，也不是本次可冻结的QA验收产物。
+- 后续需为QA和Production分别核对公开配置及共享后台标志，再从同一源码提交构建；不能仅凭文件名认定环境，也不能从旧验收记录推断当前平台配置。
+- 默认构建后，在仓库根目录运行 `node scripts/check-release-preflight.mjs`。它只读本地配置和产物，不输出密钥值，不连接云端，核对正式项目、共享后台、公开密钥类型、测试夹具及明显私钥前缀，并记录源码/产物SHA256。配置或产物不匹配时以非零状态退出。
+- `audits/admin-2026-11-03/PREFLIGHT.json` 是本次诊断快照，状态为不可发布，不是已冻结Release Manifest，也不自动代表部署或QA/Android通过。
+- 新版仍须依次完成源码checkpoint与推送、QA部署/浏览器与真实Android验收、冻结SHA、单独的正式发布步骤；不要重复执行已发布数据库的初始化或角色引导脚本。本轮没有数据库迁移。
+
 ## 当前已发布版本（2026-11-03）
 
 共享管理后台已完成本地验证、QA 浏览器与真实 Android 验收、冻结源码及 Production 最小 smoke。应用 SHA `db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d`；QA 部署 `f150c7b8`、Production 部署 `339c9239`。指定邮箱已在两个独立环境的真实账号中分别获得 super admin。下文“本地实现，待云端上线”及“Production 占位页”是历史准备说明，最终状态以 HANDOFF / Release Manifest 为准。

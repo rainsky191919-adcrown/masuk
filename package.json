@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
+    "build:qa": "vite build --mode qa",
+    "build:production": "vite build --mode production",
+    "check:qa": "node scripts/check-release-preflight.mjs qa",
+    "check:production": "node scripts/check-release-preflight.mjs production",
+    "test:build-config": "node --test tests/build-config.test.mjs",
+    "test:admin": "node tests/admin-ui/run.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test:db": "pwsh -NoProfile -File scripts/test-backend.ps1"
   },
@@ -16,6 +22,9 @@
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "vite": "latest"
+    "vite": "8.3.5"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.3"
   }
 }

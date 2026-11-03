@@ -1,0 +1,43 @@
+{
+  "release_id": "20261103-admin-ui",
+  "timezone": "Asia/Kuala_Lumpur",
+  "scope": "Ten admin UX improvements, separate verified build environments, reproducible UI checks",
+  "status": "preparing_qa_checkpoint_git_write_restored",
+  "base_sha": "593646f1f9852c96dde6a8f1194ae39cced37e98",
+  "checkpoint_sha": null,
+  "frozen_release_sha": null,
+  "local": {
+    "admin_ui_regression": "passed 40 groups",
+    "build_config_boundaries": "passed 4 groups",
+    "environment_and_artifact_checks": "passed QA and Production",
+    "npm_audit": "0 reported vulnerabilities",
+    "actual_build_guard_checks": "passed: disabled shared backend and swapped production project both rejected before output",
+    "screenshots": "audits/admin-2026-11-03/ (local only; do not upload screenshots)"
+  },
+  "qa": {
+    "url": "https://masuk.pintumasuk.workers.dev/",
+    "worker": "masuk",
+    "supabase_project": "meqmyxaxnpntjlerrxcb",
+    "previous_verified_deployment": "f150c7b8",
+    "deployment_version": null,
+    "browser_acceptance": "not_performed",
+    "real_android_acceptance": "not_performed: new QA deployment depends on required source checkpoint",
+    "android_device_readiness": "physical Huawei VOG-L29 online; Android 10; Chrome package current version 156.0.8078.79"
+  },
+  "production": {
+    "url": "https://my.pintumasuk.workers.dev/",
+    "worker": "my",
+    "supabase_project": "mlpfzynzawzhrowfkqtr",
+    "configuration": "corrected locally; build verified",
+    "deployment": "not_requested_not_performed"
+  },
+  "database_migrations": "none; do not rerun initialization or role bootstrap",
+  "checkpoint_blocker": {
+    "action": "git add scoped source and tests",
+    "automatic_approval_review": "rejected twice: workspace .git is explicitly read-only",
+    "user_authorization": "received explicit approval to write Git; platform restriction remains",
+    "resolved": "user reconnected; same scoped git add now succeeded",
+    "no_workaround_performed": true
+  },
+  "known_limits": ["Checkpoint/push and new QA/Android acceptance in progress; previous Git block resolved", "Existing single JS chunk size warning remains"]
+}

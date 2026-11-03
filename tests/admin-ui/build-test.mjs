@@ -1,0 +1,13 @@
+import { build } from 'vite'
+import { fileURLToPath } from 'node:url'
+const local = process.argv.includes('--local')
+await build({
+  configFile: fileURLToPath(new URL('./vite.config.mjs', import.meta.url)),
+  mode: local ? 'navigation-local-test' : 'navigation-test',
+  build: {
+    outDir: fileURLToPath(new URL(local ? './bundle-local' : './bundle', import.meta.url)),
+    emptyOutDir: false,
+    lib: { entry: fileURLToPath(new URL('../../src/App.jsx', import.meta.url)), formats: ['es'], fileName: () => 'app.mjs' },
+    rollupOptions: { external: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime'] },
+  },
+})

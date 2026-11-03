@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowUpRight,
   AlertTriangle,
@@ -20,7 +20,6 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
-  Trash2,
   Users,
   Clock3,
   X,
@@ -36,6 +35,9 @@ import LocationDetail, { Friendliness } from './components/LocationDetail'
 import { COMMUNITY_KEY, readCommunity, requirement, summarize } from './lib/community'
 import { sharedBackend, command, canModerate, cloudError } from './lib/sharedBackend'
 import CloudAdmin from './components/CloudAdmin'
+import AdminLocationList from './components/AdminLocationList'
+import AdminSectionNav from './components/AdminSectionNav'
+import AdminLocationActions from './components/AdminLocationActions'
 
 function formatUpdated(dateString) {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -76,6 +78,8 @@ function App() {
   const [dataSource, setDataSource] = useState(hasSupabaseConfig ? 'connecting' : 'mock')
   const [isLoadingLocations, setIsLoadingLocations] = useState(hasSupabaseConfig)
   const [editingLocation, setEditingLocation] = useState(null)
+  const [editOrigin, setEditOrigin] = useState(null)
+  const editScrollRestore = useRef(null)
   const [editConflict, setEditConflict] = useState(null)
   const [isSavingPlace, setIsSavingPlace] = useState(false)
   const [currentUser, setCurrentUser] = useState(() => {
@@ -90,10 +94,19 @@ function App() {
   const [authBusy, setAuthBusy] = useState(hasSupabaseConfig)
   const [reviewIds, setReviewIds] = useState([])
   const isAdminUser = canModerate(currentUser)
+  const isAdminEdit = Boolean(editingLocation && editOrigin?.view === 'admin' && isAdminUser)
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 20
   const [toast, setToast] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  useLayoutEffect(() => {
+    const origin = editScrollRestore.current
+    if (!origin || activeView !== origin.view) return
+    editScrollRestore.current = null
+    if (origin.trigger?.isConnected) origin.trigger.focus({ preventScroll: true })
+    window.scrollTo(origin.x, origin.y)
+  }, [activeView])
 
   async function refreshShared() {
     const [feed, places] = await Promise.all([command('feed'), fetchLocations()])
@@ -365,18 +378,31 @@ function App() {
       setQuery(saved.name)
       setArea('全部区域')
       setDifficulty('all')
-      showToast(editingLocation ? '资料已更新，立即生效；新版本重新累计认可' : '地点已保存，可以开始讨论')
+      const savedScope = sharedBackend ? '已保存到云端' : '已保存到此浏览器'
+      showToast(editingLocation ? `资料${savedScope}；新版本重新累计认可` : `地点${savedScope}，可以开始讨论`)
     } catch (error) { showToast(sharedBackend ? cloudError(error) : '无法保存，请检查浏览器存储后重试；表单内容仍保留') }
     finally { setIsSavingPlace(false) }
   }
 
   function openEdit(location) {
     if (!currentUser) return showToast('请先点击顶部登录，再修改资料')
+    setEditOrigin({ view: activeView, x: window.scrollX, y: window.scrollY, trigger: document.activeElement })
     setEditingLocation(location)
     setEditConflict(null)
     setActiveView('contribute')
     setIsMenuOpen(false)
     window.scrollTo(0, 0)
+  }
+
+  function cancelEdit() {
+    const origin = editOrigin && (editOrigin.view !== 'admin' || isAdminUser)
+      ? editOrigin
+      : { view: 'browse', x: 0, y: 0 }
+    editScrollRestore.current = origin
+    setEditingLocation(null)
+    setEditConflict(null)
+    setEditOrigin(null)
+    setActiveView(origin.view)
   }
 
   async function approveLocation(location, visitDate) {
@@ -429,7 +455,7 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${activeView === 'admin' ? ' app-shell-admin' : ''}`}>
       <div className="grid-glow grid-glow-top" />
       <div className="grid-glow grid-glow-bottom" />
 
@@ -447,10 +473,10 @@ function App() {
           <button className={activeView === 'browse' ? 'nav-item nav-item-active' : 'nav-item'} onClick={() => { setActiveView('browse'); setIsMenuOpen(false) }}>
             查地点 <span>{locations.length}</span>
           </button>
-          <button className={activeView === 'contribute' ? 'nav-item nav-item-active' : 'nav-item'} onClick={() => { setEditingLocation(null); setEditConflict(null); setActiveView('contribute'); setIsMenuOpen(false) }}>
+          <button className={activeView === 'contribute' && !isAdminEdit ? 'nav-item nav-item-active' : 'nav-item'} onClick={() => { setEditingLocation(null); setEditConflict(null); setActiveView('contribute'); setIsMenuOpen(false) }}>
             <MessageSquarePlus size={15} /> 报一个新点
           </button>
-          {isAdminUser && <button className={activeView === 'admin' ? 'nav-item nav-item-active' : 'nav-item'} onClick={openAdmin}>
+          {isAdminUser && <button className={activeView === 'admin' || isAdminEdit ? 'nav-item nav-item-active' : 'nav-item'} onClick={openAdmin}>
             <LayoutDashboard size={15} /> 后台管理
           </button>}
           </div>
@@ -465,8 +491,8 @@ function App() {
         </button>
       </header>
 
-      <main className="page-wrap">
-        {activeView !== 'detail' && <section className="hero-section">
+      <main className={`page-wrap${activeView === 'admin' || isAdminEdit ? ' page-wrap-admin' : ''}`}>
+        {activeView !== 'detail' && activeView !== 'admin' && !isAdminEdit && <section className="hero-section">
           <div className="hero-copy">
             <div className="eyebrow"><span className="live-dot" /> KLANG VALLEY · DRIVER FIELD NOTES</div>
             <h1>门口要过 <em>哪一关？</em></h1>
@@ -506,10 +532,15 @@ function App() {
             onEdit={openEdit}
             showToast={showToast}
           />
-        ) : activeView === 'admin' ? (
-          sharedBackend ? <CloudAdmin user={currentUser} locations={locations} onEdit={openEdit} onChanged={refreshShared} showToast={showToast} /> : <AdminView locations={locations} reviewIds={reviewIds} currentUser={currentUser} onEdit={openEdit} onDelete={deleteLocation} onToggleReview={toggleReview} />
-        ) : (
-          <ContributeView conflict={editConflict} isSaving={isSavingPlace} onReloadLatest={() => { if (editConflict?.latest) { setEditingLocation(editConflict.latest); setEditConflict(null) } }} key={(editingLocation?.id || 'new') + (editingLocation ? revisionOf(editingLocation) : '')} locations={locations} initialName={query} onUseExisting={(location) => { setSelectedLocationId(location.id); setActiveView('detail'); window.scrollTo(0, 0) }} initialLocation={editingLocation} onSubmit={handleContribution} onCancel={() => { setEditingLocation(null); setEditConflict(null); setActiveView('browse') }} />
+        ) : activeView !== 'admin' ? (
+          <ContributeView shared={sharedBackend} isAdminEdit={isAdminEdit} conflict={editConflict} isSaving={isSavingPlace} onReloadLatest={() => { if (editConflict?.latest) { setEditingLocation(editConflict.latest); setEditConflict(null) } }} key={(editingLocation?.id || 'new') + (editingLocation ? revisionOf(editingLocation) : '')} locations={locations} initialName={query} onUseExisting={(location) => { setSelectedLocationId(location.id); setActiveView('detail'); window.scrollTo(0, 0) }} initialLocation={editingLocation} onSubmit={handleContribution} onCancel={cancelEdit} />
+        ) : null}
+
+        {/* Preserve admin state so cancel can restore the original list and scroll. */}
+        {(activeView === 'admin' || (activeView === 'contribute' && editingLocation && editOrigin?.view === 'admin')) && (
+          <div hidden={activeView !== 'admin'}>
+            {sharedBackend ? <CloudAdmin user={currentUser} locations={locations} onEdit={openEdit} onChanged={refreshShared} showToast={showToast} /> : <AdminView locations={locations} reviewIds={reviewIds} currentUser={currentUser} onEdit={openEdit} onDelete={deleteLocation} onToggleReview={toggleReview} />}
+          </div>
         )}
       </main>
 
@@ -649,7 +680,7 @@ function AdminView({ locations, reviewIds, currentUser, onEdit, onDelete, onTogg
       <div className="admin-heading">
         <div>
           <div className="eyebrow"><span className="live-dot" /> ADMIN CONTROL ROOM</div>
-          <h2>后台管理<br /><em>看清每一次改动。</em></h2>
+          <h1>后台管理</h1>
           <p>当前以 {currentUser?.name || '本机用户'} 身份管理 Skudai 地点资料。</p>
         </div>
         <div className="admin-status"><span className="live-dot" /> LOCAL ADMIN</div>
@@ -662,25 +693,24 @@ function AdminView({ locations, reviewIds, currentUser, onEdit, onDelete, onTogg
         <div className="admin-stat"><Clock3 size={18} /><strong>{latestEdits.length}</strong><span>近期改动</span></div>
       </div>
 
+      <AdminSectionNav items={[
+        { id: 'local-admin-locations', label: '地点资料', shortLabel: '地点' },
+        { id: 'local-admin-audit', label: '最近修改', shortLabel: '记录' },
+      ]} />
+
       <div className="admin-panel">
-        <div className="admin-panel-header"><div><span className="rule-label">LOCATION DATABASE</span><h3>地点资料</h3></div><span>{locations.length} records</span></div>
-        <div className="admin-table">
-          {locations.map((location) => (
+        <div className="admin-panel-header"><div><span className="rule-label">LOCATION DATABASE</span><h2 className="admin-section-heading" id="local-admin-locations" tabIndex={-1}>地点资料</h2></div><span>{locations.length} records</span></div>
+        <AdminLocationList locations={locations} isReviewNeeded={location => reviewIds.includes(location.id)} renderRow={(location) => (
             <div className={`admin-row ${reviewIds.includes(location.id) ? 'admin-row-review' : ''}`} key={location.id}>
               <div className="admin-location"><strong>{location.name}</strong><span>{location.area} · {location.last_modified_by || '公开资料导入'}</span></div>
               <div className="admin-row-date">{formatUpdated(location.updated_at)}</div>
-              <div className="admin-row-actions">
-                <button className="admin-action review-action" onClick={() => onToggleReview(location)}><AlertTriangle size={14} /> {reviewIds.includes(location.id) ? '取消复核' : '需复核'}</button>
-                <button className="admin-action" onClick={() => onEdit(location)}><Pencil size={14} /> 修改</button>
-                <button className="admin-action delete-action" onClick={() => onDelete(location)}><Trash2 size={14} /> 删除</button>
-              </div>
+              <AdminLocationActions location={location} reviewNeeded={reviewIds.includes(location.id)} onEdit={onEdit} onToggleReview={onToggleReview} onDelete={onDelete} />
             </div>
-          ))}
-        </div>
+          )} />
       </div>
 
       <div className="admin-panel recent-panel">
-        <div className="admin-panel-header"><div><span className="rule-label">AUDIT TRAIL</span><h3>最近修改</h3></div><span>最后 5 条</span></div>
+        <div className="admin-panel-header"><div><span className="rule-label">AUDIT TRAIL</span><h2 className="admin-section-heading" id="local-admin-audit" tabIndex={-1}>最近修改</h2></div><span>最后 5 条</span></div>
         <div className="audit-list">
           {latestEdits.map((location) => <div className="audit-item" key={location.id}><Check size={14} /><span>{location.name}</span><strong>{location.last_modified_by || '公开资料导入'}</strong><time>{formatUpdated(location.updated_at)}</time></div>)}
         </div>
@@ -689,19 +719,25 @@ function AdminView({ locations, reviewIds, currentUser, onEdit, onDelete, onTogg
   )
 }
 
-function ContributeView({ conflict, isSaving, onReloadLatest, initialLocation, initialName, locations, onUseExisting, onSubmit, onCancel }) {
+function ContributeView({ shared, isAdminEdit, conflict, isSaving, onReloadLatest, initialLocation, initialName, locations, onUseExisting, onSubmit, onCancel }) {
   const [name, setName] = useState(initialLocation?.name || initialName || '')
   const [address, setAddress] = useState(initialLocation?.address || '')
   const [point, setPoint] = useState(validPoint(initialLocation?.latitude, initialLocation?.longitude) && !(initialLocation.latitude === 0 && initialLocation.longitude === 0) ? { lat: Number(initialLocation.latitude), lng: Number(initialLocation.longitude) } : null)
   const duplicates = nearDuplicates(locations, name, point, initialLocation?.id)
   const requirements = initialLocation?.entry_requirements || {}
+  const saveNotice = shared
+    ? initialLocation
+      ? '云端共享 · 保存成功后会更新当前站点的地点资料，其他设备可读取；修改者、修改原因和版本历史由服务端留存。'
+      : '云端共享 · 保存成功后会在当前站点公开展示，其他设备可查看。旧本机资料不会自动上传。'
+    : '本机保存 · 资料仅保存在此浏览器，刷新后仍保留，不会同步到其他设备或上传云端。'
   return (
-    <section className="contribute-layout">
+    <section className={`contribute-layout${isAdminEdit ? ' contribute-layout-admin' : ''}`}>
+      {isAdminEdit && <div className="admin-edit-context"><nav aria-label="后台编辑路径"><button type="button" onClick={onCancel}>后台 / 地点管理</button><span aria-hidden="true">/</span><span aria-current="page">编辑地点</span></nav><h1>{initialLocation.name}</h1><p>当前版本 {initialLocation.revision_number || 1} · 管理员编辑</p></div>}
       <div className="contribute-intro">
-        <div className="eyebrow"><span className="live-dot" /> COMMUNITY SIGNAL</div>
-        <h2>{initialLocation ? <>把资料改准确，<br /><em>帮下一位少绕路。</em></> : <>你刚刚走过的门，<br /><em>帮下一位画条线。</em></>}</h2>
-        <p>保安规则常常一夜之间改变。把你今天遇到的真实情况留下来，其他司机就能少一次折返。</p>
-        <div className="contribute-note"><Info size={17} /><span>先做现场记录，之后可以继续补充。提交内容会先标为“司机补充”。</span></div>
+        <div className="eyebrow"><span className="live-dot" /> {isAdminEdit ? 'MASUK MANAGEMENT' : 'COMMUNITY SIGNAL'}</div>
+        <h2>{isAdminEdit ? '核对并修改地点资料' : initialLocation ? <>把资料改准确，<br /><em>帮下一位少绕路。</em></> : <>你刚刚走过的门，<br /><em>帮下一位画条线。</em></>}</h2>
+        <p>{isAdminEdit ? `正在修改「${initialLocation.name}」。请核对地点资料，并填写本次修改原因。` : '保安规则常常一夜之间改变。把你今天遇到的真实情况留下来，其他司机就能少一次折返。'}</p>
+        <div className="contribute-note"><Info size={17} /><span>{initialLocation ? `${isAdminEdit ? '管理员编辑 · ' : ''}保存后直接更新${shared ? '当前站点' : '此浏览器'}的地点资料并生成新版本，无需另行审核；新版本重新累计认可。` : '先做现场记录，之后可以继续补充。只知道公寓地址也可以创建，门禁规则以后再补充。'}</span></div>
         <div className="form-legend">
           <span><i className="legend-dot legend-green" /> 直接进</span>
           <span><i className="legend-dot legend-orange" /> 需要登记</span>
@@ -711,7 +747,7 @@ function ContributeView({ conflict, isSaving, onReloadLatest, initialLocation, i
 
       <form className="contribute-form" onSubmit={onSubmit} key={initialLocation?.id || 'new-location'}>
         {conflict && <div className="edit-conflict" role="alert"><h3>资料已更新，尚未保存你的草稿</h3><p>下面保留你的输入。请核对其他人的更新，再载入最新版重新编辑；不会直接覆盖对方的修改。</p>{conflict.latest && <><h4>别人已更新的内容</h4><ChangeList before={initialLocation} after={conflict.latest} /><h4>你的草稿改动</h4><ChangeList before={initialLocation} after={conflict.draft} /><button type="button" className="outline-action" onClick={onReloadLatest}>载入最新版重新编辑（替换当前草稿）</button></>}</div>}
-        <div className="form-topline"><span>{initialLocation ? 'EDIT FIELD NOTE' : 'NEW FIELD NOTE'}</span><span>必填 *</span></div>
+        <div className="form-topline"><span>{isAdminEdit ? '管理员编辑地点' : initialLocation ? 'EDIT FIELD NOTE' : 'NEW FIELD NOTE'}</span><span>必填 *</span></div>
         <div className="form-row">
           <label>住宅 / 公寓名称 *<input name="name" required value={name} onChange={event => setName(event.target.value)} maxLength={150} placeholder="例如：The Troika Residences" /></label>
           <label>区域 / 城市 *<input name="area" required defaultValue={initialLocation?.area || ''} placeholder="例如：Skudai, Johor" /></label>
@@ -744,7 +780,7 @@ function ContributeView({ conflict, isSaving, onReloadLatest, initialLocation, i
           {initialLocation && <button className="cancel-button" type="button" onClick={onCancel}>取消修改</button>}
           <button className="submit-button" type="submit" disabled={isSaving || !!conflict}><MessageSquarePlus size={17} /> {initialLocation ? '保存修改' : '发布这条现场情报'} <ArrowUpRight size={17} /></button>
         </div>
-        <p className="form-footnote">资料仅保存在此浏览器，刷新后仍保留，尚未跨设备共享。只知道公寓地址也可以创建，门禁规则以后再补充。</p>
+        <p className="form-footnote">{saveNotice}</p>
       </form>
     </section>
   )
