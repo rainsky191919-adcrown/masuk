@@ -1,17 +1,21 @@
 {
   "release_id": "20261103-admin-community",
   "timezone": "Asia/Kuala_Lumpur",
-  "status": "local_validation",
+  "status": "qa_acceptance_in_progress",
   "scope": "Server roles, shared community/location versions, moderation and reports",
   "base_sha": "b496cf672f9ba489a60ee84718b54ec061dc3ec3",
-  "checkpoint_sha": null,
+  "checkpoint_sha": "db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d",
   "release_sha": null,
   "local": {
     "fresh_database_permissions": "passed",
     "shared_browser_real_local_rpc": "passed",
     "legacy_community_regression": "passed",
     "legacy_revision_regression": "passed",
-    "responsive_widths": [320, 390, 1440],
+    "responsive_widths": [
+      320,
+      390,
+      1440
+    ],
     "screenshots": "work/shared-backend/",
     "release_config_build": "passed (QA configuration)",
     "community_logic_tests": "passed 4/4"
@@ -20,11 +24,11 @@
     "url": "https://masuk.pintumasuk.workers.dev/",
     "worker": "masuk",
     "supabase_project": "meqmyxaxnpntjlerrxcb",
-    "deployment_version": null,
-    "source_sha": null,
+    "deployment_version": "f150c7b8",
+    "source_sha": "db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d",
     "artifact_sha256": "c9cd041ad3962ac3f6c4abb92eb180aae9b3baad22bf83b35ec0d6a303f46220",
-    "browser_acceptance": "pending",
-    "android_acceptance": "pending",
+    "browser_acceptance": "partial: real Google super admin login and dashboard passed; workflow acceptance in progress",
+    "android_acceptance": "partial: Android 10 page load, cloud 21 locations and OAuth entry passed; owner login pending",
     "android_device": "Huawei VOG-L29"
   },
   "production": {
@@ -38,8 +42,9 @@
     "previous_deployment": "737dcad3 (Hello World placeholder)"
   },
   "known_limits": [
-    "Cloud rollout and verified-owner bootstrap have not run",
+    "Production rollout has not run; Release SHA not frozen",
     "Cross-device sync polls every 15 seconds and on window focus",
-    "No automatic import of legacy browser data"
+    "No automatic import of legacy browser data",
+    "QA acceptance test post must be hidden after completion"
   ]
 }

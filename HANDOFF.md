@@ -1,5 +1,16 @@
 # Masuk 项目交接
 
+## 2026-11-03 QA 已发布，Android 验收进行中（最新状态）
+
+- 本地验证后已推送 checkpoint `db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d` 到 `main`，本地和远端 SHA 一致；尚未冻结 Release SHA。
+- 用户已在操作时明确确认 QA 增量迁移与 super admin 授权，已执行并核验 `rainsky191919@gmail.com` -> `super_admin`（QA 用户 UUID 同下文）。原 21 地点保留，21 个历史初始版本，全部私有表 RLS 开启，authenticated 无角色 INSERT，anon 无举报 SELECT。
+- QA Worker `masuk` 部署 `f150c7b8`，Ready、100%；构建包 SHA256 `c9cd041ad3962ac3f6c4abb92eb180aae9b3baad22bf83b35ec0d6a303f46220`，来源 checkpoint 同上。
+- QA Site URL 已更新为 `https://masuk.pintumasuk.workers.dev`，已添加精确回跳 `https://masuk.pintumasuk.workers.dev/`，旧回跳暂保留。真实 Google `rainsky191919@gmail.com` 登录成功，后台显示 skyy skyy · Super admin，管理员角色列表与审计记录正常。
+- Android 已重新连接：Huawei VOG-L29 / Android 10；用户明确允许使用 ADB 只操作 Masuk QA 页面并保存截图。已验证手机加载 21 云端地点、正常跳 Google 选择页；手机缺少指定管理员的登录，已请用户在手机自行完成 `rainsky191919@gmail.com` 安全登录。不得读取凭据/会话。
+- 已在 Bukit Impian Residence 发布明确标识的测试帖 `[QA 验收 20261103] 跨设备与举报测试`，用于跨设备验收，验收后须隐藏本帖及测试回复。不得把测试内容迁移 Production。
+- 当前待办：手机登录后继续 Android 管理/回复/举报及桌面审核闭环，完成清理和证据；QA 全部通过后冻结 SHA，才可进入 Production。Production 尚未改动，仍为 Hello World。
+- 证据：`release/20261103-admin-community/` 中 `qa-super-admin-granted.png`、`qa-db-verification.png`、`qa-deployment-ready.png`、`qa-auth-urls.png`、`qa-super-admin-dashboard.png`、`android-home.png`。截图与真实环境配置不得上传仓库。
+
 ## 2026-11-03 管理与共享后台开发中（最新任务）
 
 - 用户授权按顺序实现正式管理员、服务端权限、跨设备内容管理、举报处理，并指定 `rainsky191919@gmail.com` 为初始 super admin；后续仍严格遵守下方固定发布流程。
