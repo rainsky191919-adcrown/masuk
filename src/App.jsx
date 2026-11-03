@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import { areas, difficultyMeta, mockLocations } from './data.skudai'
 import { fetchLocations, subscribeToLocations } from './lib/locations'
-import { hasSupabaseConfig } from './lib/supabase'
+import { hasSupabaseConfig, supabase } from './lib/supabase'
 import MapPicker from './components/MapPicker'
 import { ChangeList } from './components/AccuracyPanel'
 import { revisionOf, differences, nextRevision, toggleApproval, savePlace, withPlaceLock } from './lib/revisions'
@@ -77,6 +77,7 @@ function App() {
   const [editConflict, setEditConflict] = useState(null)
   const [isSavingPlace, setIsSavingPlace] = useState(false)
   const [currentUser, setCurrentUser] = useState(() => {
+    if (hasSupabaseConfig) return null
     try {
       const stored = JSON.parse(window.localStorage.getItem('masuk-user'))
       return stored ? { ...stored, id: stored.id || `demo:${stored.name.trim().toLowerCase()}` } : null
@@ -84,12 +85,42 @@ function App() {
       return null
     }
   })
+  const [authBusy, setAuthBusy] = useState(hasSupabaseConfig)
   const [reviewIds, setReviewIds] = useState([])
   const isAdminUser = currentUser?.role === 'admin'
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 20
   const [toast, setToast] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) return
+    let active = true
+    let authChanged = false
+    const applyUser = user => {
+      if (!active) return
+      setCurrentUser(user ? {
+        id: user.id,
+        name: user.user_metadata?.full_name || user.user_metadata?.name || 'Masuk 用户',
+        role: 'user',
+      } : null)
+      setAuthBusy(false)
+    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      authChanged = true
+      applyUser(session?.user)
+    })
+    supabase.auth.getUser().then(({ data }) => {
+      if (!authChanged) applyUser(data.user)
+    }).catch(() => { if (!authChanged) applyUser(null) })
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('error')) {
+      showToast('Google 登录未完成，请重试')
+      for (const key of ['error', 'error_code', 'error_description']) params.delete(key)
+      window.history.replaceState(null, '', window.location.pathname + (params.size ? `?${params}` : ''))
+    }
+    return () => { active = false; subscription.unsubscribe() }
+  }, [])
 
   useEffect(() => {
     const syncLocalCommunity = event => {
@@ -172,7 +203,28 @@ function App() {
     setDifficulty('all')
   }
 
-  function handleGoogleLogin() {
+  async function handleGoogleLogin() {
+    if (supabase) {
+      if (authBusy) return
+      setAuthBusy(true)
+      try {
+        if (currentUser) {
+          const { error } = await supabase.auth.signOut({ scope: 'local' })
+          if (error) throw error
+          setCurrentUser(null)
+          showToast('已退出登录')
+        } else {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: `${window.location.origin}/` },
+          })
+          if (error) throw error
+        }
+      } catch {
+        showToast('登录连接未完成，请检查网络后重试')
+      } finally { setAuthBusy(false) }
+      return
+    }
     if (currentUser) {
       window.localStorage.removeItem('masuk-user')
       setCurrentUser(null)
@@ -196,7 +248,7 @@ function App() {
     const form = event.currentTarget
     if (isSavingPlace) return
     if (!currentUser) {
-      showToast('请先点击顶部演示登录，再保存资料')
+      showToast('请先点击顶部登录，再保存资料')
       return
     }
     const formData = new FormData(form)
@@ -267,7 +319,7 @@ function App() {
   }
 
   function openEdit(location) {
-    if (!currentUser) return showToast('请先点击顶部演示登录，再修改资料')
+    if (!currentUser) return showToast('请先点击顶部登录，再修改资料')
     setEditingLocation(location)
     setEditConflict(null)
     setActiveView('contribute')
@@ -276,7 +328,7 @@ function App() {
   }
 
   async function approveLocation(location, visitDate) {
-    if (!currentUser) return showToast('请先点击顶部演示登录，再认可资料')
+    if (!currentUser) return showToast('请先点击顶部登录，再认可资料')
     if (visitDate && (!/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || new Date(visitDate + 'T00:00:00') > new Date())) return showToast('到访日期不能晚于今天')
     try {
       const result = await withPlaceLock(() => {
@@ -345,9 +397,9 @@ function App() {
             <LayoutDashboard size={15} /> 后台管理
           </button>}
           </div>
-          <button className={currentUser ? 'auth-button auth-button-active' : 'auth-button'} onClick={handleGoogleLogin}>
+          <button className={currentUser ? 'auth-button auth-button-active' : 'auth-button'} onClick={handleGoogleLogin} disabled={authBusy} title={currentUser ? '点击退出登录' : undefined}>
             <span className="google-mark">G</span>
-            {currentUser ? currentUser.name : '演示登录'}
+            {authBusy ? '连接中…' : currentUser ? currentUser.name : hasSupabaseConfig ? 'Google 登录' : '演示登录'}
           </button>
         </div>
 
