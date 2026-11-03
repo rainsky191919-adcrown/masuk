@@ -1,11 +1,11 @@
 {
   "release_id": "20261103-admin-community",
   "timezone": "Asia/Kuala_Lumpur",
-  "status": "qa_acceptance_in_progress",
+  "status": "qa_passed_release_frozen",
   "scope": "Server roles, shared community/location versions, moderation and reports",
   "base_sha": "b496cf672f9ba489a60ee84718b54ec061dc3ec3",
   "checkpoint_sha": "db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d",
-  "release_sha": null,
+  "release_sha": "db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d",
   "local": {
     "fresh_database_permissions": "passed",
     "shared_browser_real_local_rpc": "passed",
@@ -27,9 +27,10 @@
     "deployment_version": "f150c7b8",
     "source_sha": "db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d",
     "artifact_sha256": "c9cd041ad3962ac3f6c4abb92eb180aae9b3baad22bf83b35ec0d6a303f46220",
-    "browser_acceptance": "partial: real Google super admin login and dashboard passed; workflow acceptance in progress",
-    "android_acceptance": "partial: Android 10 page load, cloud 21 locations and OAuth entry passed; owner login pending",
-    "android_device": "Huawei VOG-L29"
+    "browser_acceptance": "passed: real Google super admin, shared post/reply/helpful, Android report resolution, reverse-device moderation sync",
+    "android_acceptance": "passed: physical Huawei VOG-L29 Android 10, Google owner login, shared desktop post/reply, report submission, admin moderation; test content hidden",
+    "android_device": "Huawei VOG-L29",
+    "evidence_directory": "release/20261103-admin-community/"
   },
   "production": {
     "url": "https://my.pintumasuk.workers.dev/",
@@ -42,9 +43,10 @@
     "previous_deployment": "737dcad3 (Hello World placeholder)"
   },
   "known_limits": [
-    "Production rollout has not run; Release SHA not frozen",
+    "Production rollout has not run",
     "Cross-device sync polls every 15 seconds and on window focus",
     "No automatic import of legacy browser data",
-    "QA acceptance test post must be hidden after completion"
-  ]
+    "QA test post/reply hidden; audit retained"
+  ],
+  "frozen_at": "2026-11-03T13:05:26.9997318+08:00"
 }

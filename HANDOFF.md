@@ -1,5 +1,12 @@
 # Masuk 项目交接
 
+## 2026-11-03 QA 实机验收通过、Release SHA 已冻结（最新）
+
+- 已通过真实 Huawei VOG-L29 / Android 10 的 Google owner 登录、读取桌面测试帖/回复、提交举报、进入 Super admin 后台并隐藏测试回复；桌面收到手机举报并处理，同时手机/桌面双向同步清理状态。QA 测试帖和回复均已隐藏，审计保留，未修改真实地点资料。
+- QA 浏览器与 Android 验收通过，冻结应用 Release SHA `db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d`；后续独立交接/Manifest 文档提交不替换此应用 SHA。QA 部署仍为 `f150c7b8`。
+- 证据补充：`android-cross-device-post.png`、`android-admin.png`、`android-cleanup.png`、`qa-resolved-report.png`、`qa-report-resolved-cleanup.png`，位于本次 release 证据目录（不上传仓库）。
+- 下一步检查独立 Production 配置并使用同一冻结 SHA 发布；截至本段记录尚未修改 Production，仍为 Hello World。生产 Google OAuth secret 只能由用户直接填写，不从 QA 读取/复制机密；Production super admin 引导仍须已有该邮箱的真实已验证账号。
+
 ## 2026-11-03 QA 已发布，Android 验收进行中（最新状态）
 
 - 本地验证后已推送 checkpoint `db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d` 到 `main`，本地和远端 SHA 一致；尚未冻结 Release SHA。
