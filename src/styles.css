@@ -591,3 +591,49 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 @media (max-width: 760px) {
   :is(.admin-layout, .contribute-layout-admin) :is(input[type=search], input[type=email], input[type=date], input[type=number], input[type=text], input:not([type]), select, textarea) { font-size: 16px; }
 }
+/* Mobile-first reading order from the November driver-task audit. */
+.account-control { position: relative; }
+.auth-button-active .google-mark { width: auto; min-width: 28px; height: auto; background: none; color: var(--lime); white-space: nowrap; }
+.account-options { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 220px; padding: 14px; background: #101d2b; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 30px #0008; }
+.account-options strong { display: block; overflow-wrap: anywhere; font-size: 14px; }
+.account-options button { margin-top: 8px; min-height: 44px; width: 100%; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; }
+.coverage-caption { display: flex; align-items: center; gap: 6px; color: var(--muted-bright); font-size: 12px; margin: 0; }
+.quick-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.quick-filters button[aria-pressed=true] { border-color: var(--lime); color: var(--lime); }
+.advanced-filters > summary, .card-extra > summary, .entry-fields > summary, .card-more > summary, .sharing-note > summary, .rating-help > summary, .older-reports > summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-size: 13px; color: var(--muted-bright); }
+.filter-explanation { color: var(--muted-bright); font-size: 13px; line-height: 1.6; }
+.unknown-summary { font-size: 13px; line-height: 1.6; margin: 8px 0 0; }
+.card-entry-summary .unknown-summary { font-size: 13px; }
+.entry-fields[open] > summary { margin-bottom: 4px; }
+.card-extra .tips-box { margin-top: 0; }
+.card-more { position: relative; }
+.card-more > summary { text-align: center; padding: 4px; }
+.card-more[open] { grid-column: 1 / -1; }
+.card-more[open] > button { display: inline-flex; min-height: 44px; margin-right: 10px; }
+.detail-page .detail-panel:first-child { min-width: 0; }
+.detail-page .friendliness-compact .friendliness-heading strong { font-size: 16px; }
+.detail-page :is(button, .primary-action, .outline-action, summary) { min-height: 44px; }
+.detail-page :is(.text-action, .post-actions button) { min-width: 44px; }
+.detail-page :is(.post-meta, .visit-record small, .muted, .community-notice, .feedback-meta, .compact-feedback-meta) { font-size: 13px; line-height: 1.7; }
+.detail-heading-actions { flex-wrap: wrap; }
+.visit-record { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .topbar .auth-button { font-size: 13px; }
+  .topbar .auth-button .account-name { display: none; }
+  .topbar .auth-button .google-mark { font-size: 13px; }
+  .page-wrap-browse { padding-top: 10px; }
+  .page-wrap-browse .hero-section { gap: 6px; margin-bottom: 10px; }
+  .page-wrap-browse .hero-copy h1 { font-size: 27px; margin: 6px 0; }
+  .page-wrap-browse .hero-description-compact { margin: 4px 0; }
+  .page-wrap-browse .search-zone { gap: 6px; margin-bottom: 8px; }
+  .page-wrap-browse .coverage-caption { grid-column: 1 / -1; }
+  .page-wrap-browse .filter-zone { padding-bottom: 4px; }
+  .page-wrap-browse .result-toolbar { margin: 8px 0; }
+  .page-wrap-browse .card-title-row { margin-top: 4px; gap: 4px; }
+  .page-wrap-browse .verified-count-empty { display: none; }
+  .page-wrap-browse .location-card { padding: 14px; }
+  .page-wrap-browse .card-actions { width: 100%; }
+  .page-wrap-browse .card-actions .source-link { border-color: rgba(199,255,98,.28); color: var(--lime); }
+  .detail-heading-actions > * { min-width: 110px; }
+  .detail-page .requirement-grid { gap: 14px; }
+}

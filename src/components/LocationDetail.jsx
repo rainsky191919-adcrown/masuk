@@ -17,8 +17,8 @@ export function Friendliness({ location, feedback, compact = false }) {
     const label = summary.level ? meta.label : summary.count ? '反馈不足，暂未评分' : '尚无司机评分'
     return <div className="friendliness friendliness-compact" aria-label={`通关友好度：${label}`}>
       <div className="friendliness-heading"><span className={`status-dot rating-${summary.level}`} aria-hidden="true" /><strong>{label}</strong></div>
-      <p className="compact-feedback-meta">近30天 · {summary.count} 位司机反馈{!summary.level && summary.count > 0 && ' · 满3位后形成评分'}{summary.level > 0 && summary.disputed && <span className="dispute"> · 体验有分歧</span>}</p>
-      <p className="compact-feedback-meta">{summary.latest ? `最近到访反馈：${dateText(summary.latest)}` : '暂无近期到访反馈'}</p>
+      <p className="compact-feedback-meta">近30天 · {summary.count ? `${summary.count} 位司机反馈` : '暂无近期到访反馈'}{!summary.level && summary.count > 0 && ' · 满3位后形成评分'}{summary.level > 0 && summary.disputed && <span className="dispute"> · 体验有分歧</span>}</p>
+      {summary.latest && <p className="compact-feedback-meta">最近到访反馈：{dateText(summary.latest)}</p>}
     </div>
   }
   return <div className={`friendliness ${compact ? 'friendliness-compact' : ''}`}>
@@ -37,12 +37,24 @@ export default function LocationDetail({ location, community, saveCommunity, sha
   const [replyTo, setReplyTo] = useState(null)
   const [expanded, setExpanded] = useState([])
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [discussionOpen, setDiscussionOpen] = useState(false)
+  const feedbackRef = useRef(null)
+  const discussionRef = useRef(null)
+  function openFeedback() {
+    setFeedbackOpen(true)
+    requestAnimationFrame(() => { feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); feedbackRef.current?.querySelector('select')?.focus({ preventScroll: true }) })
+  }
+  function openDiscussion() {
+    setDiscussionOpen(true)
+    requestAnimationFrame(() => { discussionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); titleRef.current?.focus({ preventScroll: true }) })
+  }
   const titleRef = useRef(null)
   const actionLock = useRef(false)
   const [busy, setBusy] = useState(false)
   const posts = community.posts.filter(post => post.locationId === location.id)
-  const reports = community.feedback.filter(item => item.locationId === location.id).sort((a, b) => b.visitedAt.localeCompare(a.visitedAt))
-  const currentReport = reports.find(item => item.authorId === user?.id)
+  const allReports = community.feedback.filter(item => item.locationId === location.id).sort((a, b) => b.visitedAt.localeCompare(a.visitedAt))
+  const reports = allReports.filter(item => Date.now() - new Date(item.visitedAt).getTime() <= 30 * 86400000 && new Date(item.visitedAt).getTime() <= Date.now())
+  const currentReport = allReports.find(item => item.authorId === user?.id)
   const visiblePosts = posts.filter(post => tab === '全部' || post.type === tab).sort((a, b) => Number(b.pinned) - Number(a.pinned) || (sort === 'helpful' ? b.helpful.length - a.helpful.length : new Date(b.activityAt) - new Date(a.activityAt)))
   const rules = location.entry_requirements
   const requireUser = () => { if (user) return true; showToast('请先使用顶部登录后发言'); return false }
@@ -121,16 +133,35 @@ export default function LocationDetail({ location, community, saveCommunity, sha
     }
     if (saveCommunity({ ...community, feedback: [...community.feedback.filter(item => !(item.locationId === location.id && item.authorId === user.id)), report] })) { setFeedbackOpen(false); showToast('通关反馈已保存，同一账号在此地点的新反馈会替换旧反馈') }
   }
+  function renderReport(report) {
+    return <div className="visit-record" key={report.authorId}>
+      <strong>{difficultyMeta[report.level].label} · 尚未核实</strong>
+      <span className="post-meta">{report.author} · {dateText(report.visitedAt)} · {report.service}</span>
+      <p>{report.note || '未补充说明'}</p>
+      <small>司机自报 · QR：{report.requirements.need_qr} · 证件：{report.requirements.need_ic} · 骑车：{report.requirements.bike_allowed}</small>
+      {shared && <button disabled={busy} className="text-action" onClick={() => reportContent(report.id, 'feedback')}>举报反馈</button>}
+    </div>
+  }
   return <section className="detail-page">
     <button className="back-link" onClick={onBack}><ArrowLeft size={17} /> 返回地点列表 <span>/ {location.area} / 地点详情</span></button>
-    <div className="detail-heading"><div><div className="eyebrow">DRIVER FIELD NOTES</div><h1 tabIndex={-1} ref={element => element && !element.dataset.focused && (element.dataset.focused = 'true', element.focus())}>{location.name}</h1><p><MapPin size={16} />{location.address}</p></div><div className="detail-heading-actions"><a className="primary-action" href={location.maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.name + ' ' + location.area)}`} target="_blank" rel="noreferrer"><MapPin size={16} /> 地图导航</a><button onClick={() => copyRules(location)}><Clipboard size={16} /> 复制规则</button></div></div>
-    <div className="community-notice"><Info size={16} /><span>{shared ? '云端共享 · 资料、认可、讨论与反馈同步至当前环境；旧本机内容不会自动上传。' : '本机体验版 · 资料、认可、讨论与反馈仅保存在此浏览器，尚未跨设备共享。'}</span></div>
+    <div className="detail-heading"><div><div className="eyebrow">DRIVER FIELD NOTES</div><h1 tabIndex={-1} ref={element => element && !element.dataset.focused && (element.dataset.focused = 'true', element.focus())}>{location.name}</h1><p><MapPin size={16} />{location.address}</p></div><div className="detail-heading-actions"><a className="primary-action" href={location.maps_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.name + ' ' + location.area)}`} target="_blank" rel="noreferrer"><MapPin size={16} /> 地图导航</a><button className="primary-action" aria-label="我刚去过 · 补充反馈" onClick={openFeedback}>我刚去过</button><button onClick={() => copyRules(location)}><Clipboard size={16} /> 复制规则</button></div></div>
+    <details className="sharing-note"><summary>资料共享说明</summary><div className="community-notice"><Info size={16} /><span>{shared ? '云端共享 · 资料、认可、讨论与反馈同步至当前环境；旧本机内容不会自动上传。' : '本机体验版 · 资料、认可、讨论与反馈仅保存在此浏览器，尚未跨设备共享。'}</span></div></details>
     {busy && <p role="status">正在保存至云端…</p>}
     {shared && <button className="text-action" onClick={() => reportContent(location.id, 'location')}>举报地点资料</button>}
     <div className="detail-grid"><div className="detail-main">
-      <section className="detail-panel"><h2>通关友好度</h2><Friendliness location={location} feedback={community.feedback} /></section>
+
       <section className="detail-panel"><h2>进门要求</h2><div className="requirement-grid">{[['顾客 QR', requirement(rules.need_qr)], ['证件登记', requirement(rules.need_ic)], ['骑车进入', requirement(rules.bike_allowed, '可进入', '不可进入')], ['临时停车', rules.parking || '待确认']].map(([label, value]) => <div key={label}><span>{label}</span><strong className={value === '待确认' ? 'unknown-text' : ''}>{value}</strong></div>)}</div><p className="entry-rule">{rules.gate_rule}</p>{location.entrance_note && <p className="entry-rule"><MapPin size={14} /> 入口提示：{location.entrance_note}</p>}<div className="detail-tip"><Info size={15} />{location.tips}</div><AccuracyPanel location={location} user={user} onEdit={onEdit} onApprove={onApprove} /></section>
-      <section className="detail-panel discussion-section"><div className="section-heading"><h2>司机讨论 <span className="count-chip">{posts.length}</span></h2><button className="primary-action" onClick={() => { titleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); titleRef.current?.focus() }}><Plus size={17} /> 发帖子</button></div>
+      <section className="detail-panel" id="recent-reports">
+        <h2>近期司机报告</h2><p className="muted">近30天 · {reports.length} 位司机报告；个人到访经历尚未核实，不自动覆盖当前规则。至少3位司机反馈才形成评分。</p>
+        {!reports.length && <p className="muted">近30天暂无司机反馈，进门要求仍需现场确认。</p>}
+        {reports.map(renderReport)}
+        {allReports.length > reports.length && <details className="older-reports"><summary>查看其他原报告（{allReports.length - reports.length}）</summary>{allReports.filter(report => !reports.includes(report)).map(renderReport)}</details>}
+      </section>
+      <section className="detail-panel"><h2>通关友好度</h2><Friendliness compact location={location} feedback={community.feedback} /><details className="rating-help"><summary>查看等级说明</summary><Friendliness location={location} feedback={community.feedback} /></details></section>
+      <section className="detail-panel" ref={feedbackRef}><ShieldCheck className="sidebar-icon" size={25} /><h2>我刚去过</h2><p className="muted">留下实际通关体验，帮下一位少绕路。</p><button className="outline-action" onClick={() => setFeedbackOpen(!feedbackOpen)} aria-expanded={feedbackOpen}>{currentReport ? '更新我的通关反馈' : '填写通关反馈'}</button>
+        {!user && <button className="outline-action" onClick={onLogin}>登录后补充反馈</button>}{feedbackOpen && <form className="community-form feedback-form" onSubmit={submitFeedback} key={user?.id || 'guest'}><label>通关感受<select name="level" defaultValue={currentReport?.level || 3}>{[1, 2, 3, 4, 5].map(level => <option key={level} value={level}>{difficultyMeta[level].label}</option>)}</select></label><label>到访日期<input name="visitedAt" type="date" required max={today()} defaultValue={currentReport ? localDate(currentReport.visitedAt) : today()} /></label><label>到访时间<input name="time" type="time" required defaultValue={new Date(currentReport?.visitedAt || Date.now()).toTimeString().slice(0, 5)} /></label><label>服务类型<select name="service" defaultValue={currentReport?.service || '外卖配送'}><option>外卖配送</option><option>包裹送货</option><option>接送乘客</option><option>其他</option></select></label>{[['need_qr', '需要顾客 QR'], ['need_ic', '需要证件登记'], ['bike_allowed', '允许骑车进入']].map(([key, label]) => <label key={key}>{label}<select name={key} defaultValue={currentReport?.requirements[key] || '待确认'}><option>待确认</option><option>是</option><option>否</option></select></label>)}<label>现场说明<textarea name="note" rows={3} maxLength={1000} defaultValue={currentReport?.note} placeholder="补充入口、时段和实际流程" /></label><button className="primary-action" type="submit" disabled={!user}>保存反馈</button></form>}
+      </section>
+      <section className="detail-panel discussion-section"><div className="section-heading"><h2>司机讨论 <span className="count-chip">{posts.length}</span></h2><button className="primary-action" onClick={openDiscussion}><Plus size={17} /> 发帖子</button></div>
         <div className="discussion-toolbar"><div className="discussion-tabs" aria-label="讨论类型">{['全部', ...types].map(type => <button key={type} aria-pressed={tab === type} className={tab === type ? 'selected' : ''} onClick={() => setTab(type)}>{type}</button>)}</div><select aria-label="讨论排序" value={sort} onChange={event => setSort(event.target.value)}><option value="latest">最新活动</option><option value="helpful">最多帮助</option></select></div>
         {!visiblePosts.length && <div className="discussion-empty"><MessageSquare size={28} /><h3>{posts.length ? '这个分类还没有帖子' : '这里的第一条经验，等你来分享'}</h3><p>问问入口怎么走，或留下今天的真实通关经历。</p></div>}
         {visiblePosts.map(post => <article className="discussion-post" key={post.id}>
@@ -140,12 +171,9 @@ export default function LocationDetail({ location, community, saveCommunity, sha
           <button className="text-action" onClick={() => requireUser() && setReplyTo(replyTo === post.id ? null : post.id)}> {replyTo === post.id ? '取消回复' : '我要回复'} <ArrowUpRight size={13} /></button>{replyTo === post.id && <form className="reply-form" onSubmit={event => submitReply(event, post)}><label>回复内容<textarea name="reply" required maxLength={1500} rows={3} autoFocus /></label><button className="primary-action" type="submit">发布回复</button></form>}
         </article>)}
       </section>
-      <section className="detail-panel"><h2>近期实测记录</h2><p className="muted">同一账号保留最新一条记录，至少3位司机近30天反馈才显示综合等级。</p>{!reports.length && <p className="muted">暂无司机反馈，进门要求仍需现场确认。</p>}{reports.map(report => <div className="visit-record" key={report.authorId}><strong>{difficultyMeta[report.level].label}</strong><span className="post-meta">{report.author} · {dateText(report.visitedAt)} · {report.service}</span><p>{report.note || '未补充说明'}</p><small>QR：{report.requirements.need_qr} · 证件：{report.requirements.need_ic} · 骑车：{report.requirements.bike_allowed}</small>{shared && <button disabled={busy} className="text-action" onClick={() => reportContent(report.id, 'feedback')}>举报反馈</button>}</div>)}</section>
+
     </div><aside className="detail-sidebar">
-      <section className="detail-panel"><ShieldCheck className="sidebar-icon" size={25} /><h2>我刚去过</h2><p className="muted">留下实际通关体验，帮下一位少绕路。</p><button className="outline-action" onClick={() => setFeedbackOpen(!feedbackOpen)} aria-expanded={feedbackOpen}>{currentReport ? '更新我的通关反馈' : '填写通关反馈'}</button>
-        {feedbackOpen && <form className="community-form feedback-form" onSubmit={submitFeedback} key={user?.id || 'guest'}><label>通关感受<select name="level" defaultValue={currentReport?.level || 3}>{[1, 2, 3, 4, 5].map(level => <option key={level} value={level}>{difficultyMeta[level].label}</option>)}</select></label><label>到访日期<input name="visitedAt" type="date" required max={today()} defaultValue={currentReport ? localDate(currentReport.visitedAt) : today()} /></label><label>到访时间<input name="time" type="time" required defaultValue={new Date(currentReport?.visitedAt || Date.now()).toTimeString().slice(0, 5)} /></label><label>服务类型<select name="service" defaultValue={currentReport?.service || '外卖配送'}><option>外卖配送</option><option>包裹送货</option><option>接送乘客</option><option>其他</option></select></label>{[['need_qr', '需要顾客 QR'], ['need_ic', '需要证件登记'], ['bike_allowed', '允许骑车进入']].map(([key, label]) => <label key={key}>{label}<select name={key} defaultValue={currentReport?.requirements[key] || '待确认'}><option>待确认</option><option>是</option><option>否</option></select></label>)}<label>现场说明<textarea name="note" rows={3} maxLength={1000} defaultValue={currentReport?.note} placeholder="补充入口、时段和实际流程" /></label><button className="primary-action" type="submit" disabled={!user}>保存反馈</button></form>}
-      </section>
-      <section className="detail-panel"><h2>发起讨论</h2><form className="community-form" onSubmit={submitPost}><label>帖子类型<select name="type">{types.map(type => <option key={type}>{type}</option>)}</select></label><label>标题<input name="title" ref={titleRef} required maxLength={100} placeholder="例如：夜间进门要准备什么？" /></label><label>内容<textarea name="body" required rows={5} maxLength={3000} placeholder="分享到访时间、进门流程和注意事项…" /></label><label>到访日期（选填）<input type="date" name="visitDate" max={today()} /></label><label>服务类型<select name="service"><option>外卖配送</option><option>包裹送货</option><option>接送乘客</option><option>其他</option></select></label><p className="form-hint"><Info size={14} />请勿公开证件及住户隐私。</p>{!user && <button type="button" className="outline-action" onClick={onLogin}>登录后发言</button>}<button className="primary-action" type="submit" disabled={!user}><Plus size={16} />发布帖子</button></form></section>
+      <section className="detail-panel" ref={discussionRef}><h2>发起讨论</h2><button className="outline-action" aria-expanded={discussionOpen} onClick={() => setDiscussionOpen(!discussionOpen)}>{discussionOpen ? "收起发帖表单" : "写一篇讨论"}</button>{discussionOpen && <form className="community-form" onSubmit={submitPost}><label>帖子类型<select name="type">{types.map(type => <option key={type}>{type}</option>)}</select></label><label>标题<input name="title" ref={titleRef} required maxLength={100} placeholder="例如：夜间进门要准备什么？" /></label><label>内容<textarea name="body" required rows={5} maxLength={3000} placeholder="分享到访时间、进门流程和注意事项…" /></label><label>到访日期（选填）<input type="date" name="visitDate" max={today()} /></label><label>服务类型<select name="service"><option>外卖配送</option><option>包裹送货</option><option>接送乘客</option><option>其他</option></select></label><p className="form-hint"><Info size={14} />请勿公开证件及住户隐私。</p>{!user && <button type="button" className="outline-action" onClick={onLogin}>登录后发言</button>}<button className="primary-action" type="submit" disabled={!user}><Plus size={16} />发布帖子</button></form>}</section>
       <section className="detail-panel data-note"><Info size={21} /><h3>公开资料 ≠ 司机实测</h3><p>未知信息单独标记，未有足够实测时不推算友好度。单条帖子不会改变等级，现场规则以保安安排为准。</p></section>
     </aside></div>
   </section>

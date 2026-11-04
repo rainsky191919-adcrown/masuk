@@ -12,11 +12,11 @@ export default function CardEntrySummary({ location }) {
   return <>
     <div className="rule-callout card-entry-summary">
       <span className="rule-label">进门要求</span>
-      <dl className="card-entry-grid">{fields.map(([key, label]) => <div key={key}>
+      {allUnknown && <p className="unknown-summary">证件／QR／缴费／骑车均待确认</p>}
+      <details open={!allUnknown} className="entry-fields"><summary>查看四项要求</summary><dl className="card-entry-grid">{fields.map(([key, label]) => <div key={key}>
         <dt>{label}</dt>
         <dd className={typeof rules[key] === 'boolean' ? 'entry-known' : 'entry-unknown'}>{key === 'bike_allowed' ? requirement(rules[key], '可以', '不可以') : requirement(rules[key])}</dd>
-      </div>)}</dl>
-      {allUnknown && <p className="entry-uncertainty">以上项目尚待核实，先联系顾客确认。</p>}
+      </div>)}</dl></details>
     </div>
     {rules.gate_rule && (imported ? <details className="card-rule-notes">
       <summary>查看公开项目资料</summary>

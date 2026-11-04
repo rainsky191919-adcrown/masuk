@@ -68,7 +68,8 @@ try {
 
   await click([...document.querySelectorAll('.topnav button')].find(el => el.textContent.includes('查地点')))
   window.scrollTo(0, 620)
-  await click([...document.querySelectorAll('.location-card button')].find(el => el.textContent.trim() === '修改'))
+  document.querySelector('.location-card .card-more').open = true
+  await click([...document.querySelectorAll('.location-card button')].find(el => el.textContent.trim() === '修改资料'))
   await click(button('取消修改'))
   assert.ok(document.querySelector('.location-card'), 'Browse-origin edit returns to browse')
   assert.equal(window.scrollY, 620)
@@ -87,6 +88,8 @@ try {
   await click(button('后台管理'))
   await click([...visibleAdmin().querySelectorAll('button')].find(el => el.textContent === '修改资料'))
   await click(document.querySelector('.auth-button'))
+  assert.ok(document.querySelector('#account-options'), 'Account opens before signing out')
+  await click([...document.querySelectorAll('#account-options button')].find(el => el.textContent.trim() === '退出登录'))
   await click(button('取消修改'))
   assert.equal(visibleAdmin(), null, 'Signed-out user does not return to admin')
   assert.ok(document.querySelector('.location-card'), 'Safe fallback is browse')

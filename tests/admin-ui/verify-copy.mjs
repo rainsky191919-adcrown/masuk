@@ -43,7 +43,9 @@ try {
   console.log('PASS: ' + (local ? 'local' : 'cloud') + ' creation states actual save scope without a pending-review claim')
 
   await click([...document.querySelectorAll('.topnav button')].find(el => el.textContent.includes('查地点')))
-  await click([...document.querySelectorAll('.location-card button')].find(el => el.textContent.trim() === '修改'))
+  const more = document.querySelector('.location-card .card-more')
+  more.open = true
+  await click([...more.querySelectorAll('button')].find(el => el.textContent.trim() === '修改资料'))
   checkScope(true)
   assert.match(document.querySelector('.contribute-note').textContent, /生成新版本/)
   assert.doesNotMatch(document.querySelector('.contribute-layout').textContent, /管理员编辑/)
