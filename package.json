@@ -12,6 +12,7 @@
     "check:production": "node scripts/check-release-preflight.mjs production",
     "test:build-config": "node --test tests/build-config.test.mjs",
     "test:admin": "node tests/admin-ui/run.mjs",
+    "test:homepage": "node --test tests/community.test.mjs && node audits/2026-11-04-homepage-design/check-step2.mjs && node audits/2026-11-04-homepage-design/check-step5.mjs && node audits/2026-11-04-homepage-design/check-step8.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test:db": "pwsh -NoProfile -File scripts/test-backend.ps1"
   },

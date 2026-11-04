@@ -14,3 +14,4 @@ supabase/.temp/
 __pycache__/
 *.pyc
 tests/admin-ui/bundle*/
+audits/**/step*-render-bundle/

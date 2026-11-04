@@ -8,7 +8,6 @@ import {
   Clipboard,
   Filter,
   Flag,
-  Gauge,
   Info,
   Lightbulb,
   LayoutDashboard,
@@ -24,7 +23,7 @@ import {
   Clock3,
   X,
 } from 'lucide-react'
-import { areas, difficultyMeta, mockLocations } from './data.skudai'
+import { areas, coverageArea, difficultyMeta, mockLocations } from './data.skudai'
 import { fetchLocations, subscribeToLocations } from './lib/locations'
 import { hasSupabaseConfig, supabase } from './lib/supabase'
 import MapPicker from './components/MapPicker'
@@ -38,6 +37,9 @@ import CloudAdmin from './components/CloudAdmin'
 import AdminLocationList from './components/AdminLocationList'
 import AdminSectionNav from './components/AdminSectionNav'
 import AdminLocationActions from './components/AdminLocationActions'
+import BrowseEmptyState from './components/BrowseEmptyState'
+import CardEntrySummary from './components/CardEntrySummary'
+import BoardStatus from './components/BoardStatus'
 
 function formatUpdated(dateString) {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -99,6 +101,19 @@ function App() {
   const pageSize = 20
   const [toast, setToast] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuButtonRef = useRef(null)
+  const navigationRef = useRef(null)
+  const mainRef = useRef(null)
+
+  function focusMain() {
+    requestAnimationFrame(() => mainRef.current?.focus({ preventScroll: true }))
+  }
+
+  function toggleMenu() {
+    if (isMenuOpen) { setIsMenuOpen(false); return }
+    setIsMenuOpen(true)
+    requestAnimationFrame(() => navigationRef.current?.querySelector('button')?.focus())
+  }
 
   useLayoutEffect(() => {
     const origin = editScrollRestore.current
@@ -217,7 +232,7 @@ function App() {
     const normalizedQuery = query.trim().toLowerCase()
     return locations.filter((location) => {
       const matchesQuery = !normalizedQuery || [location.name, location.area, location.address].some((value) => value.toLowerCase().includes(normalizedQuery))
-      const matchesArea = area === '全部区域' || (area === 'Skudai, Johor · 81300' && location.area === 'Skudai, Johor')
+      const matchesArea = area === '全部区域' || location.area === area
       const matchesDifficulty = difficulty === 'all' || summarize(location, community.feedback).level === Number(difficulty)
       return matchesQuery && matchesArea && matchesDifficulty
     })
@@ -459,7 +474,13 @@ function App() {
       <div className="grid-glow grid-glow-top" />
       <div className="grid-glow grid-glow-bottom" />
 
-      <header className="topbar">
+      <header className="topbar" onKeyDown={event => {
+        if (event.key === 'Escape' && isMenuOpen) {
+          event.preventDefault()
+          setIsMenuOpen(false)
+          menuButtonRef.current?.focus()
+        }
+      }}>
         <button className="brand" onClick={() => { setActiveView('browse'); setIsMenuOpen(false) }} aria-label="回到地点查询">
           <span className="brand-mark"><ShieldCheck size={19} strokeWidth={2.5} /></span>
           <span className="brand-copy">
@@ -469,44 +490,37 @@ function App() {
         </button>
 
         <div className="topbar-actions">
-          <div className={`topnav ${isMenuOpen ? 'topnav-open' : ''}`}>
-          <button className={activeView === 'browse' ? 'nav-item nav-item-active' : 'nav-item'} onClick={() => { setActiveView('browse'); setIsMenuOpen(false) }}>
+          <nav id="primary-navigation" ref={navigationRef} aria-label="主导航" className={`topnav ${isMenuOpen ? 'topnav-open' : ''}`}>
+          <button aria-current={activeView === 'browse' ? 'page' : undefined} className={activeView === 'browse' ? 'nav-item nav-item-active' : 'nav-item'} onClick={() => { setActiveView('browse'); setIsMenuOpen(false); focusMain() }}>
             查地点 <span>{locations.length}</span>
           </button>
-          <button className={activeView === 'contribute' && !isAdminEdit ? 'nav-item nav-item-active' : 'nav-item'} onClick={() => { setEditingLocation(null); setEditConflict(null); setActiveView('contribute'); setIsMenuOpen(false) }}>
+          <button aria-current={activeView === 'contribute' && !isAdminEdit ? 'page' : undefined} className={activeView === 'contribute' && !isAdminEdit ? 'nav-item nav-item-active' : 'nav-item'} onClick={() => { setEditingLocation(null); setEditConflict(null); setActiveView('contribute'); setIsMenuOpen(false); focusMain() }}>
             <MessageSquarePlus size={15} /> 报一个新点
           </button>
-          {isAdminUser && <button className={activeView === 'admin' || isAdminEdit ? 'nav-item nav-item-active' : 'nav-item'} onClick={openAdmin}>
+          {isAdminUser && <button aria-current={activeView === 'admin' || isAdminEdit ? 'page' : undefined} className={activeView === 'admin' || isAdminEdit ? 'nav-item nav-item-active' : 'nav-item'} onClick={() => { openAdmin(); focusMain() }}>
             <LayoutDashboard size={15} /> 后台管理
           </button>}
-          </div>
+          </nav>
           <button className={currentUser ? 'auth-button auth-button-active' : 'auth-button'} onClick={handleGoogleLogin} disabled={authBusy} title={currentUser ? '点击退出登录' : undefined}>
             <span className="google-mark">G</span>
             {authBusy ? '连接中…' : currentUser ? currentUser.name : hasSupabaseConfig ? 'Google 登录' : '演示登录'}
           </button>
         </div>
 
-        <button className="menu-button" onClick={() => setIsMenuOpen((open) => !open)} aria-label="打开菜单">
+        <button ref={menuButtonRef} className="menu-button" onClick={toggleMenu} aria-label={isMenuOpen ? '关闭菜单' : '打开菜单'} aria-expanded={isMenuOpen} aria-controls="primary-navigation">
           {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
       </header>
 
-      <main className={`page-wrap${activeView === 'admin' || isAdminEdit ? ' page-wrap-admin' : ''}`}>
+      <main ref={mainRef} tabIndex={-1} className={`page-wrap${activeView === 'browse' ? ' page-wrap-browse' : ''}${activeView === 'admin' || isAdminEdit ? ' page-wrap-admin' : ''}`}>
         {activeView !== 'detail' && activeView !== 'admin' && !isAdminEdit && <section className="hero-section">
           <div className="hero-copy">
-            <div className="eyebrow"><span className="live-dot" /> KLANG VALLEY · DRIVER FIELD NOTES</div>
+            <div className="eyebrow"><span className="live-dot" /> {coverageArea} · DRIVER FIELD NOTES</div>
             <h1>门口要过 <em>哪一关？</em></h1>
-            <p>给 Grab、inDrive、Foodpanda 和 ShopeeFood 司机的 Guardhouse 快速情报。先看规则，再决定要不要掉头。</p>
+            <p className="hero-description-full">给 Grab、inDrive、Foodpanda 和 ShopeeFood 司机的 Guardhouse 快速情报。先看规则，再决定要不要掉头。</p>
+            {activeView === 'browse' && <p className="hero-description-compact">先查门禁规则，再安排进门。</p>}
           </div>
-          <div className="hero-signal" aria-label="目前情报板状态">
-            <div className="signal-ring"><Gauge size={26} /></div>
-            <div>
-              <span className="signal-label">FIELD BOARD</span>
-              <strong>{isLoadingLocations ? '同步中…' : `${locations.length} 个地点`}</strong>
-              <small>{dataSource === 'supabase-live' ? 'Supabase · 实时同步' : dataSource === 'supabase' ? 'Supabase · 云端资料' : 'Skudai · 本地资料'}</small>
-            </div>
-            <ArrowUpRight className="signal-arrow" size={18} />
-          </div>
+          <BoardStatus locations={locations} feedback={community.feedback} isLoading={isLoadingLocations} dataSource={dataSource} hasCloudConfig={hasSupabaseConfig} shared={sharedBackend} />
         </section>}
 
         {activeView === 'detail' && selectedLocation ? (
@@ -545,8 +559,8 @@ function App() {
       </main>
 
       <footer className="footer">
-        <span><Sparkles size={14} /> Johor / Skudai 公开项目资料 · 门禁规则待司机现场补充</span>
-        <span>v0.2 / Skudai only</span>
+        <span><Sparkles size={14} /> {coverageArea} 公开项目资料 · 门禁规则待司机现场补充</span>
+        <span>v0.2 / {coverageArea}</span>
       </footer>
 
       {toast && <div className="toast" role="status"><CheckCircle2 size={17} /> {toast}</div>}
@@ -555,12 +569,21 @@ function App() {
 }
 
 function BrowseView({ onCreate, community, onOpen, query, setQuery, area, setArea, difficulty, setDifficulty, filteredLocations, visibleLocations, currentPage, totalPages, setCurrentPage, clearFilters, copyRules, onEdit, showToast }) {
+  const searchInput = useRef(null)
+  const difficultyFilters = useRef(null)
+  function resetBrowseFilters(keepSearch = false) {
+    if (keepSearch) { setArea('全部区域'); setDifficulty('all') }
+    else clearFilters()
+    if (difficultyFilters.current) difficultyFilters.current.scrollLeft = 0
+    searchInput.current?.focus()
+  }
   return (
     <>
       <section className="search-zone">
         <div className="search-input-wrap">
           <Search size={21} />
           <input
+            ref={searchInput}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="搜公寓、住宅区、街道…"
@@ -578,24 +601,24 @@ function BrowseView({ onCreate, community, onOpen, query, setQuery, area, setAre
       </section>
 
       <section className="filter-zone" aria-label="通关难度筛选">
-        <div className="filter-title"><Filter size={15} /> 通关友好度</div>
-        <div className="difficulty-filters">
-          <button className={difficulty === 'all' ? 'difficulty-filter active-filter' : 'difficulty-filter'} onClick={() => setDifficulty('all')}>全部</button>
+        <div className="filter-title"><Filter size={15} /> 通关友好度<span className="filter-scroll-hint">左右滑动选择</span></div>
+        <div ref={difficultyFilters} className="difficulty-filters" role="group" aria-label="选择通关友好度">
+          <button aria-pressed={difficulty === 'all'} className={difficulty === 'all' ? 'difficulty-filter active-filter' : 'difficulty-filter'} onClick={() => setDifficulty('all')}>全部</button>
           {Object.entries(difficultyMeta).map(([level, meta]) => (
-            <button key={level} className={`difficulty-filter ${meta.className} ${difficulty === level ? 'active-filter' : ''}`} onClick={() => setDifficulty(level)}>
-              <span className="filter-dot" /> {meta.label}
+            <button key={level} aria-pressed={difficulty === level} className={`difficulty-filter ${meta.className} ${difficulty === level ? 'active-filter' : ''}`} onClick={() => setDifficulty(level)}>
+              <span className="filter-dot" aria-hidden="true" /> {meta.label}
             </button>
           ))}
         </div>
       </section>
 
       <div className="result-toolbar">
-        <div>
+        <div role="status" aria-atomic="true">
           <span className="result-count">{filteredLocations.length}</span>
           <span className="result-label">个情报点匹配</span>
         </div>
         {(query || area !== '全部区域' || difficulty !== 'all') && (
-          <button className="reset-button" onClick={clearFilters}><RefreshCcw size={14} /> 重置筛选</button>
+          <button className="reset-button" onClick={() => resetBrowseFilters()}><RefreshCcw size={14} /> 重置筛选</button>
         )}
       </div>
 
@@ -606,12 +629,13 @@ function BrowseView({ onCreate, community, onOpen, query, setQuery, area, setAre
           ))}
         </section>
       ) : (
-        <div className="empty-state">
-          <Search size={28} />
-          <strong>这个区域还没有匹配的记录</strong>
-          <p>换一个关键词，或者先把筛选清空。也可以直接补充这个地点。</p>
-          <div className="empty-actions"><button onClick={onCreate}><MessageSquarePlus size={16} /> 新增这间公寓</button><button onClick={clearFilters}>清空筛选</button></div>
-        </div>
+        <BrowseEmptyState
+          query={query}
+          hasFilters={area !== '全部区域' || difficulty !== 'all'}
+          onClearFilters={() => resetBrowseFilters(true)}
+          onClearSearch={() => { setQuery(''); searchInput.current?.focus() }}
+          onCreate={onCreate}
+        />
       )}
 
       {totalPages > 1 && (
@@ -627,8 +651,10 @@ function BrowseView({ onCreate, community, onOpen, query, setQuery, area, setAre
 
 function LocationCard({ community, onOpen, location, copyRules, onEdit, showToast }) {
   const meta = difficultyMeta[summarize(location, community.feedback).level]
+  const approvalCount = location.accuracy_votes?.length || 0
+  const imported = location.last_modified_by === '公开资料导入'
   return (
-    <article className={`location-card ${meta.className}`} onClick={(event) => { if (!event.target.closest('button, a, input, select, textarea') && !window.getSelection()?.toString()) onOpen(location) }}>
+    <article className={`location-card ${meta.className}`} onClick={(event) => { if (!event.target.closest('button, a, input, select, textarea, details') && !window.getSelection()?.toString()) onOpen(location) }}>
       <div className="card-stripe" />
       <div className="card-header">
         <div className="level-badge">
@@ -646,14 +672,11 @@ function LocationCard({ community, onOpen, location, copyRules, onEdit, showToas
           <h2><button className="card-title-button" onClick={() => onOpen(location)}>{location.name}</button></h2>
           <div className="location-meta"><MapPin size={14} /> {location.area} <span className="meta-divider" /> {location.address}</div>
         </div>
-        <div className="verified-count"><Check size={13} /> {location.accuracy_votes?.length || 0} 人认可</div>
+        <div className={`verified-count${approvalCount ? '' : ' verified-count-empty'}`} title="仅表示当前版本资料认可，与通关评分分开计算">{approvalCount > 0 && <Check size={13} />} {approvalCount ? `${approvalCount} 人认可资料` : '资料暂无认可'}</div>
       </div>
 
+      <CardEntrySummary location={location} />
       <Friendliness compact location={location} feedback={community.feedback} />
-      <div className="rule-callout">
-        <span className="rule-label">ENTRY RULE</span>
-        <p>{location.entry_requirements.gate_rule}</p>
-      </div>
 
       <div className="tips-box">
         <Lightbulb size={16} />
@@ -662,7 +685,7 @@ function LocationCard({ community, onOpen, location, copyRules, onEdit, showToas
 
 <button className="card-discussion-link" onClick={() => onOpen(location)}><MessageSquarePlus size={16} /> {community.posts.filter(post => post.locationId === location.id).length} 个讨论 <span>查看详情与发言 ↗</span></button>
       <div className="card-footer">
-        <span className="updated-at"><RefreshCcw size={13} /> 最后修改：{location.last_modified_by || '公开资料导入'} · {formatUpdated(location.updated_at)}</span>
+        <span className="updated-at"><RefreshCcw size={13} /> {imported ? '资料导入' : `资料更新：${location.last_modified_by || '来源未记录'}`} · {formatUpdated(location.updated_at)}</span>
         <div className="card-actions">
           <a className="source-link" href={location.maps_url} target="_blank" rel="noreferrer"><MapPin size={13} /> Maps</a>
           <button className="source-link edit-link" onClick={() => onEdit(location)}><Pencil size={13} /> 修改</button>

@@ -1,5 +1,26 @@
 # Masuk 项目交接
 
+## 2026-11-04 首页优化：本地通过，准备 checkpoint 与 QA 验收
+
+- 本轮用户授权：将所有已完成修改 Git checkpoint + push main → QA 发布 → QA 浏览器／真实 Android 验收；不包含 Production 发布。
+- 完成首页 8 项优化及筛选栏清除／重置自动回位：紧凑手机首屏、诚实评分、空态恢复、统一覆盖范围、进门要求优先、手机操作尺寸、菜单／筛选语义和司机可理解的资料状态。未修改数据库、角色或认证配置。
+- 整体本地回归发现的唯一 P2 问题已修复，19 项针对性复验通过；原始 57/58 回归证据与关闭记录分别保留，不冒称重跑全部 58 项。见 audits/2026-11-04-homepage-design/regression/REPORT.md 及 filter-reset-fix/REPORT.md。
+- 本轮发布前检查：npm run test:homepage 共 25 项通过，npm run test:admin 共 40 组通过，npm run test:build-config 共 4 项通过。社区逻辑测试已从忽略的 work 整理为 tests/community.test.mjs，首页检查可由 npm run test:homepage 复现。生成的组件测试包不提交。
+- 当前尚未生成本轮 checkpoint 或发布 QA，不沿用旧应用 SHA 的验收结论。既有 QA Worker masuk／项目 meqmyxaxnpntjlerrxcb 及正式 Worker my／项目 mlpfzynzawzhrowfkqtr 继续严格分离；无数据库迁移，不重跑初始化或角色引导。
+- Android 原 QA 专用 ADB 路径已安全恢复，设备在线，型号及浏览器版本待本轮核对。Cloudflare connector 仍为旧账号，停止使用该连接进行业务操作，后续仅在正确浏览器账号中核对发布目标。
+- 本轮截图、真实环境文件、构建包保留本地，不提交到 Git。后续验收／部署状态写入独立 releases/20261104-homepage-ui 记录；旧发布记录仍作历史证据。
+
+## 2026-11-04 续接入口（用户要求更新 handoff）
+
+- **当前阶段：新版 QA 与真实 Android 已验收、测试内容已清理、应用 SHA 已冻结，等待单独的正式发布授权。** 本次请求仅更新交接记录。
+- 应用冻结提交：`f6c5a54f2d16e95e044a3fe63771692c2bcbfa52`。验收报告/Manifest/部署说明的独立文档提交：`b18427a96d35099660a6f3a3b181b9134046ee46`，已推送并核对远端 `main` 一致。文档提交不能替代实际已验收的应用 SHA。
+- QA 当前已验收部署 `0f68edb0`，地址 `https://masuk.pintumasuk.workers.dev/`；回滚目标 `f150c7b8`。线上 build-info 与冻结 SHA、QA 项目及共享后台标志一致。本轮测试帖/回复已隐藏且未置顶，举报 resolved、待处理 0，公开讨论 0；审计轨迹保留。
+- 本轮未更新 Production。其上一已发布记录为 `339c9239` / `db7a30a18c5bf8df2be68cfea4ca3cd7c38f085d`，目标 Worker `my`、项目 `mlpfzynzawzhrowfkqtr`、地址 `https://my.pintumasuk.workers.dev/`。这不是 Hello World 占位状态；后续操作以重新核实的当前部署为准。
+- 下一次获正式发布授权后：先核对目标身份和当前部署/回滚点，再在冻结 SHA 的独立检出目录使用 Production 配置构建及预检，部署后做最小 smoke，并更新本轮 Manifest 与交接。不要直接从后续文档 HEAD 构建并标成冻结版本；无新迁移，不重跑数据库初始化或 super admin 引导。
+- 续接先读本段、下方新版验收完成记录、`audits/admin-2026-11-03/QA-ACCEPTANCE.md`、`releases/20261103-admin-ui/manifest.json` 及 `DEPLOYMENT.md` 的固定发布流程。旧段落中 Git 受阻、QA 未部署、Production 占位页等均为历史状态。
+- Git 与 Android 自动审批服务的前次阻断均已恢复。连接需按当时实际状态重新核对；不要沿用旧浏览器 tab ID 或假定手机仍在线。ADB 既有授权仅限 Masuk QA 操作及截图，不能自动扩大到正式环境或其他手机应用。IAB 不支持业务原生原因弹窗，QA 已在真机 Chrome 完成相关验收。
+- 工作区中未跟踪的历史审计截图与 PREFLIGHT JSON 继续保留在本地；`release/`、`work/`、真实 `.env`、构建产物和依赖目录不提交。当前证据目录 `release/20261103-admin-ui/`。本次交接更新不改变任何应用源码或冻结版本。
+
 ## 2026-11-04 新版 QA 与真实 Android 验收完成（本段为当前状态）
 
 - 应用 checkpoint `f6c5a54f2d16e95e044a3fe63771692c2bcbfa52` 已推送 main。QA Worker `masuk` 部署 `0f68edb0`；线上 build-info 再次确认该 SHA、QA 项目 `meqmyxaxnpntjlerrxcb`、共享后台开启。QA ZIP SHA256 `08cf0eda79135c526cab7c788dec53b15bcbea1c9c15aee4d1cc479e7bb9bf9c`。

@@ -1,0 +1,41 @@
+{
+  "release_id": "20261104-homepage-ui",
+  "timezone": "Asia/Kuala_Lumpur",
+  "scope": "Eight homepage UX improvements and horizontal-filter reset visibility fix",
+  "status": "local_verified_pending_checkpoint_and_qa",
+  "base_sha": "b18427a96d35099660a6f3a3b181b9134046ee46",
+  "checkpoint_sha": null,
+  "frozen_release_sha": null,
+  "remote_branch": "rainsky191919-adcrown/masuk:main",
+  "local": {
+    "homepage_checks": "passed 25 cases via npm run test:homepage",
+    "admin_regression": "passed 40 groups via npm run test:admin",
+    "build_config": "passed 4 cases via npm run test:build-config",
+    "targeted_filter_reset_browser_checks": "passed 19 checks; 320px, 390px and desktop",
+    "qa_build_and_preflight": "passed before checkpoint; must rebuild after checkpoint",
+    "acceptance_report": "audits/2026-11-04-homepage-design/regression/REPORT.md"
+  },
+  "qa": {
+    "url": "https://masuk.pintumasuk.workers.dev/",
+    "worker": "masuk",
+    "supabase_project": "meqmyxaxnpntjlerrxcb",
+    "previous_release_record": "0f68edb0; reverify before deployment",
+    "deployment_version": null,
+    "source_sha": null,
+    "artifact_sha256": null,
+    "browser_acceptance": "not_yet_performed_for_this_release",
+    "real_android_acceptance": "not_yet_performed_for_this_release"
+  },
+  "production": {
+    "url": "https://my.pintumasuk.workers.dev/",
+    "worker": "my",
+    "supabase_project": "mlpfzynzawzhrowfkqtr",
+    "deployment": "not_requested_not_performed"
+  },
+  "database_migrations": "none; do not rerun initialization or role bootstrap",
+  "known_limits": [
+    "Existing single JavaScript chunk size warning remains",
+    "Real Android and cloud data behavior require this release's QA verification",
+    "Screenshots, real environment files and build assets remain local only"
+  ]
+}

@@ -51,4 +51,5 @@ export const mockLocations = [
   makeLocation({ id: 'skudai-021', name: 'Taman Impian Emas Township', area: 'Skudai, Johor', address: 'Taman Impian Emas, Skudai', latitude: 1.5517, longitude: 103.6514, difficulty_level: 3, entry_requirements: { gate_rule: '公开报道：大型 gated & guarded township，住宅 precinct 设有保安与出入口管控。' }, platforms: ['住宅区'], maps_url: 'https://www.google.com/maps/search/?api=1&query=Taman+Impian+Emas+Skudai+Johor', source_url: 'https://fullreport.theedgemalaysia.com/tepea/TEPEA-2024.pdf', source_label: 'The Edge Malaysia' }),
 ]
 
-export const areas = ['全部区域', 'Skudai, Johor · 81300']
+export const coverageArea = 'Skudai, Johor'
+export const areas = ['全部区域', coverageArea]

@@ -13,6 +13,14 @@ const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000
 export function Friendliness({ location, feedback, compact = false }) {
   const summary = summarize(location, feedback)
   const meta = difficultyMeta[summary.level]
+  if (compact) {
+    const label = summary.level ? meta.label : summary.count ? '反馈不足，暂未评分' : '尚无司机评分'
+    return <div className="friendliness friendliness-compact" aria-label={`通关友好度：${label}`}>
+      <div className="friendliness-heading"><span className={`status-dot rating-${summary.level}`} aria-hidden="true" /><strong>{label}</strong></div>
+      <p className="compact-feedback-meta">近30天 · {summary.count} 位司机反馈{!summary.level && summary.count > 0 && ' · 满3位后形成评分'}{summary.level > 0 && summary.disputed && <span className="dispute"> · 体验有分歧</span>}</p>
+      <p className="compact-feedback-meta">{summary.latest ? `最近到访反馈：${dateText(summary.latest)}` : '暂无近期到访反馈'}</p>
+    </div>
+  }
   return <div className={`friendliness ${compact ? 'friendliness-compact' : ''}`}>
     <div className="friendliness-heading"><span className={`status-dot rating-${summary.level}`} /><strong>{meta.label}</strong>{compact && <span>{summary.count} 位司机反馈</span>}</div>
     {!compact && <p>{summary.level ? meta.description : '还需要更多近期实测，公开门禁资料不等于通关体验。'}</p>}

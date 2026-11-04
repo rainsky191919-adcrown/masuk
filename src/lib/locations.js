@@ -1,17 +1,17 @@
 import { hasSupabaseConfig, supabase } from './supabase'
 import { sharedBackend, command } from './sharedBackend'
 
-function normalizeLocation(row) {
+export function normalizeLocation(row) {
   const requirements = row.entry_requirements || {}
 
   return {
     ...row,
     address: row.address || `${row.area} · 地址待补充`,
     entry_requirements: {
-      need_ic: false,
-      need_qr: false,
-      fee_required: false,
-      bike_allowed: false,
+      need_ic: '待确认',
+      need_qr: '待确认',
+      fee_required: '待确认',
+      bike_allowed: '待确认',
       parking: '待确认',
       gate_rule: '门禁规则待司机补充。',
       ...requirements,
