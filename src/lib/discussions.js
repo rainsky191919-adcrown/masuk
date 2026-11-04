@@ -15,8 +15,8 @@ export function localPostPage(community, locationId, type, sort, page, focusId) 
   if (focusId && rows.some(p=>p.id===focusId)) page=Math.floor(rows.findIndex(p=>p.id===focusId)/10)+1
   return { ...pageSlice(rows.map(p => ({ ...p, replyCount: p.replies.length, helpfulCount: p.helpful.length })), page), counts }
 }
-export function localReplyPage(post, page, focusId) {
-  const rows=[...(post?.replies || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt) || a.id.localeCompare(b.id))
+export function localReplyPage(post, page, focusId, sort = 'oldest') {
+  const rows=[...(post?.replies || [])].sort((a, b) => (sort === 'latest' ? -1 : 1) * (new Date(a.createdAt) - new Date(b.createdAt) || a.id.localeCompare(b.id)))
   if (focusId && rows.some(r=>r.id===focusId)) page=Math.floor(rows.findIndex(r=>r.id===focusId)/10)+1
   return pageSlice(rows, page)
 }

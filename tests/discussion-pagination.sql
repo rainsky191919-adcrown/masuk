@@ -33,6 +33,14 @@ do $$declare n integer; response jsonb; result jsonb; pid uuid; begin
     perform public.discussion_assert((result->>'page')::int=greatest(1,ceil(n/10.0)::integer),'reply last page '||n);
     if n=11 then perform public.discussion_assert(jsonb_array_length(result->'items')=1 and result->'items'->0->>'body'='Reply 11','eleventh reply chronological second page'); end if;
   end loop;
+  result:=public.masuk_discussion('replies',jsonb_build_object('postId',pid,'sort','latest','page',1));
+  perform public.discussion_assert(jsonb_array_length(result->'items')=10 and result->'items'->0->>'body'='Reply 21' and result->'items'->9->>'body'='Reply 12','latest first page globally descending');
+  result:=public.masuk_discussion('replies',jsonb_build_object('postId',pid,'sort','latest','page',3));
+  perform public.discussion_assert(jsonb_array_length(result->'items')=1 and result->'items'->0->>'body'='Reply 1','latest final page oldest remaining reply');
+  perform set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
+  result:=public.masuk_discussion('replies',jsonb_build_object('postId',pid,'sort','latest','focusOwnBody','Reply 21'));
+  perform public.discussion_assert((result->>'page')::int=1,'latest saved reply focus on newest first page');
+  perform set_config('request.jwt.claim.sub','',true);
   update masuk_private.replies set hidden=true where body='Reply 21';
   result:=public.masuk_discussion('replies',jsonb_build_object('postId',pid,'page',3));
   perform public.discussion_assert((result->>'page')::int=2 and (result->>'total')::int=20,'hidden reply excluded and invalid final page clamped');
@@ -52,6 +60,7 @@ do $$begin
   begin perform public.masuk_discussion('replies',jsonb_build_object('postId',md5('21')::uuid));raise exception 'hidden parent visible'; exception when invalid_parameter_value then null; end;
   begin perform public.masuk_discussion('delete_post','{}');raise exception 'write action accepted'; exception when invalid_parameter_value then null; end;
   begin perform public.masuk_discussion('posts','{"locationId":"skudai-001","page":0}');raise exception 'invalid page accepted'; exception when invalid_parameter_value then null; end;
+  begin perform public.masuk_discussion('replies',jsonb_build_object('postId',md5('21')::uuid,'sort','invalid'));raise exception 'invalid sort accepted'; exception when invalid_parameter_value then null; end;
 end$$;
 reset role;
 rollback;

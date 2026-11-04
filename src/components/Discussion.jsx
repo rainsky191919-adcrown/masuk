@@ -81,16 +81,17 @@ export default function Discussion({ locationId, community, shared, onAction, sa
   function changeQuery(next) { focusNext.current=true; setQuery({...query,focusId:null,...next}) }
   function patchThread(id, patch) { setThreads(old=>({...old,[id]:{...old[id],...patch}})) }
   async function loadReplies(post, page = 1, open = true, focus = {}) {
+    const sort = focus.sort || threadRef.current[post.id]?.sort || 'oldest'
     const token = ++threadSequence.current
     threadRequests.current[post.id]=token
     patchThread(post.id,{loading:true,error:'',expanded:open})
     try {
-      const data = shared ? await discussionCommand('replies',{postId:post.id,page,...focus}) : localReplyPage(communityRef.current.posts.find(p=>p.id===post.id),page,focus.focusReplyId)
+      const data = shared ? await discussionCommand('replies',{postId:post.id,page,...focus,sort}) : localReplyPage(communityRef.current.posts.find(p=>p.id===post.id),page,focus.focusReplyId,sort)
       if (threadRequests.current[post.id] !== token) return
-      patchThread(post.id,{data,loading:false})
+      patchThread(post.id,{data,sort,loading:false})
       requestAnimationFrame(()=>focusBlock(replyRefs.current[post.id]))
       return data
-    } catch { if (threadRequests.current[post.id] === token) patchThread(post.id,{loading:false,error:'回复加载失败，已保留当前页，请重试。',retryPage:page}) }
+    } catch { if (threadRequests.current[post.id] === token) patchThread(post.id,{loading:false,error:'回复加载失败，已保留当前页，请重试。',retryPage:page,retrySort:sort}) }
   }
   function requireUser() { if (user) return true; showToast('请先登录后发言'); return false }
   async function mutate(action, payload, localChange, refresh = true) {
@@ -176,9 +177,11 @@ export default function Discussion({ locationId, community, shared, onAction, sa
         </div>
         {thread.replyOpen && <form className="reply-form" onSubmit={e=>submitReply(e,post)}><label>回复《{post.title}》<textarea aria-label={`回复《${post.title}》`} required maxLength={1500} rows={3} autoFocus value={thread.draft||''} onChange={e=>patchThread(post.id,{draft:e.target.value})} /></label><p className="form-hint">请勿公开证件及住户隐私。</p><button className="primary-action" disabled={busy} type="submit">发布回复</button></form>}
         {thread.expanded && <section className="post-replies" aria-label={`《${post.title}》的回复`} aria-busy={!!thread.loading}>
-          <h4 tabIndex={-1} ref={e=>replyRefs.current[post.id]=e}>《{post.title}》的回复</h4><p className="discussion-range" role="status">按时间从早到晚 · {replies.total?`第 ${(replies.page-1)*10+1}–${Math.min(replies.page*10,replies.total)} 条／共 ${replies.total} 条`:'暂无回复'}</p>
-          <button className="text-action" disabled={thread.loading} onClick={()=>loadReplies(post,2147483647)}>看最新回复</button>
-          {thread.loading&&<p role="status">正在加载回复…</p>}{thread.error&&<p role="alert">{thread.error}<button className="text-action" onClick={()=>loadReplies(post,thread.retryPage)}>重试回复</button></p>}
+          <h4 tabIndex={-1} ref={e=>replyRefs.current[post.id]=e}>《{post.title}》的回复</h4>
+          <label className="reply-sort">回复顺序<select aria-label={`《${post.title}》回复顺序`} disabled={thread.loading} value={thread.sort || 'oldest'} onChange={e=>loadReplies(post,1,true,{sort:e.target.value})}><option value="oldest">最早回复优先</option><option value="latest">最新回复优先</option></select></label>
+          <p className="discussion-range" role="status">{thread.sort === 'latest' ? '按时间从新到旧' : '按时间从早到晚'} · {replies.total?`第 ${(replies.page-1)*10+1}–${Math.min(replies.page*10,replies.total)} 条／共 ${replies.total} 条`:'暂无回复'}</p>
+          <button className="text-action" disabled={thread.loading} onClick={()=>loadReplies(post,1,true,{sort:'latest'})}>看最新回复</button>
+          {thread.loading&&<p role="status">正在加载回复…</p>}{thread.error&&<p role="alert">{thread.error}<button className="text-action" onClick={()=>loadReplies(post,thread.retryPage,true,{sort:thread.retrySort})}>重试回复</button></p>}
           <DiscussionPager label={`《${post.title}》回复分页`} data={replies} busy={thread.loading||busy} onPage={page=>loadReplies(post,page)} />
           {replies.items.map(reply=><div tabIndex={-1} data-content-id={reply.id} className={`post-reply${highlight===reply.id?' discussion-highlight':''}`} key={reply.id}><div className="post-meta">{reply.author} · {timeText(reply.createdAt)}</div><LongText text={reply.body} />
             {(shared||reply.authorId===user?.id)&&<details className="discussion-more"><summary>回复更多操作</summary>{reply.authorId===user?.id&&<button disabled={busy} onClick={()=>removeReply(post,reply)}>删除回复</button>}{shared&&<button disabled={busy} onClick={()=>report(reply.id,'reply')}>举报回复</button>}</details>}</div>)}

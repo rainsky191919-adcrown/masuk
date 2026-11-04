@@ -9,5 +9,5 @@ export async function discussionCommand(action,payload) {
    return {...page,items:page.items.map(({replies,...p})=>p)}
  }
  if(state.failReplies) throw new Error('isolated read failure')
- return localReplyPage(state.posts.find(p=>p.id===payload.postId),payload.page)
+ return localReplyPage(state.posts.find(p=>p.id===payload.postId),payload.page,undefined,payload.sort)
 }

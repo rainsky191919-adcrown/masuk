@@ -598,6 +598,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .discussion-section .discussion-tabs { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .discussion-section .discussion-tabs button[aria-pressed=true] { color: var(--lime); border-bottom-color: var(--lime); }
 .discussion-range { color: var(--muted-bright); font-size: 13px; line-height: 1.6; }
+.reply-sort { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted-bright); font-size: 13px; }
+.reply-sort select { min-height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--panel); color-scheme: dark; font-size: 16px; }
 .discussion-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin: 14px 0; }
 .discussion-pagination button, .discussion-more button { min-height: 44px; min-width: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); font-size: 13px; }
 .discussion-pagination span { color: var(--muted-bright); font-size: 13px; }
