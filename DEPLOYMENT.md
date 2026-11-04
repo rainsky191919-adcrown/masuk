@@ -1,5 +1,11 @@
 # Masuk 部署说明
 
+## 最新：2026-11-04 手机优先优化 QA／Android 已验收
+
+最终应用 SHA `6280ffa25a08c800b3b2cf8645f317f615fd1b7a` 已 checkpoint 并推送 main，QA Worker `masuk` 部署 `28bc44a5`（Ready／100%）。完整浏览器46项及Huawei VOG-L29／Android10／Chrome156验收后，最终CSS补修另通过12项浏览器和Android针对性复验；线上4资源哈希匹配本地QA包。详见 `audits/2026-11-04-mobile-implementation/QA-ACCEPTANCE.md` 与 `releases/20261104-mobile-first/manifest.json`。
+
+Production 未发布，没有数据库迁移或业务数据写入。后续文档提交不是新应用版本。正式发布须另获授权，使用本冻结SHA和独立Production配置构建，不上传QA包。前一QA部署 `86f94d7e`、本轮前已验收版本 `53e0df19` 均保留。
+
 ## 最新：2026-11-04 首页优化 QA 已验收，正式发布待单独授权
 
 首页 8 项优化及筛选回位修复已 checkpoint 并推送 main。应用冻结 SHA 为 343058232ccf5233aee7ae2911c5887e7fbac83d，QA Worker masuk 当前部署 53e0df19，回滚目标 0f68edb0。QA 浏览器与 Huawei VOG-L29／Android 10／Chrome 156 真机验收完成，证据边界见 audits/2026-11-04-homepage-design/QA-ACCEPTANCE.md，发布记录见 releases/20261104-homepage-ui/manifest.json。

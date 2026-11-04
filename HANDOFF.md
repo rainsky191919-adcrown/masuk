@@ -1,5 +1,13 @@
 # Masuk 项目交接
 
+## 2026-11-04 手机优先优化：QA／Android 已验收（最新）
+
+- 用户已授权的 checkpoint／push main → QA 发布 → QA 浏览器／真实 Android 验收全部完成。最终应用冻结于 `6280ffa25a08c800b3b2cf8645f317f615fd1b7a`；QA Worker `masuk` 部署 `28bc44a5`，Ready／100%。Production 未发布，无数据库迁移或业务数据写入。
+- 本轮补修两个真实验收问题：已有认可＋近期反馈组合挤出短屏首条规则；更多操作中的复制按钮继承浅色原生底。两项均已安全修复、checkpoint／push、重新构建发布与复验。前一部署 `86f94d7e`、本轮前已验收版本 `53e0df19` 保留作回滚。
+- 本地最终39项浏览器检查通过。完整共享QA浏览器46项和Huawei VOG-L29／Android10／Chrome156功能验收通过；最终CSS包额外12项浏览器复验及Android最终SHA／首屏／深色按钮复验通过。最终版与完整验收版JS SHA256相同，线上4资源哈希与本地QA包匹配。
+- 报告：`audits/2026-11-04-mobile-implementation/QA-ACCEPTANCE.md`；Manifest：`releases/20261104-mobile-first/manifest.json`；截图、真实配置、ZIP和原始浏览器记录均仅在忽略的本地release目录。后续文档commit不改变冻结的应用SHA，正式发布仍须单独授权。
+- 浏览器及Android均恢复空搜索、全部地点、关闭菜单／表单，保留现有登录、认可、讨论与到访反馈。未创建、删除或清理业务内容。下面“准备QA发布”及“仅审计未实施”为历史记录。
+
 ## 2026-11-04 手机优先建议已实施，准备 QA 发布（最新）
 
 - 用户已授权：Git checkpoint + push main → QA 发布 → QA 浏览器／Android 验收；未授权 Production 发布。本轮不执行数据库迁移，不重跑初始化，不改角色或现有业务数据。

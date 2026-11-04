@@ -1,0 +1,125 @@
+{
+  "release_id": "20261104-mobile-first",
+  "timezone": "Asia/Kuala_Lumpur",
+  "status": "qa_accepted_frozen_pending_production_authorization",
+  "base_sha": "033dac644fc3967bac2af3a5bcbb124257f307f4",
+  "checkpoint_sha": "6280ffa25a08c800b3b2cf8645f317f615fd1b7a",
+  "frozen_release_sha": "6280ffa25a08c800b3b2cf8645f317f615fd1b7a",
+  "remote_branch": "rainsky191919-adcrown/masuk:main",
+  "source_tree_sha256": "619a51c1e1fde18949eddf71ca27b24a9cae7622c48e5f7659b03c85b8efc902",
+  "frozen_at": "2026-11-04T14:15:36.988Z",
+  "scope": "Mobile-first place lookup, report clarity, early feedback, filter counts, card hierarchy and account menu",
+  "local": {
+    "browser_checks": 39,
+    "homepage_cases": 25,
+    "build_config_cases": 4,
+    "admin_groups": 40,
+    "qa_build_and_preflight": "PASS"
+  },
+  "qa": {
+    "url": "https://masuk.pintumasuk.workers.dev/",
+    "account_id": "f6d7976c32c9c50a893f1688f02b2e38",
+    "worker": "masuk",
+    "supabase_project": "meqmyxaxnpntjlerrxcb",
+    "source_sha": "6280ffa25a08c800b3b2cf8645f317f615fd1b7a",
+    "deployment_version": "28bc44a5",
+    "deployment_status": "Ready / 100%",
+    "previous_deployment": "86f94d7e",
+    "previous_accepted_before_this_release": "53e0df19",
+    "artifact_sha256": "5eb20a1e0bd2f96ac92d0b74f1f5097450f52ea8ffe0874651d2fe1cc69301b2",
+    "assets": [
+      {
+        "path": "dist/qa/assets/index-DedQQ3f9.css",
+        "sha256": "8b2c3be5197374ec1a16c8070eef0448576a07b183d3b0b8c2092c474eb2c46b",
+        "bytes": 77639
+      },
+      {
+        "path": "dist/qa/assets/index-nR3m55Mj.js",
+        "sha256": "bfa3d1f1b667c8e47cc422ece77b88f9f454920a6c22cce896d9afc2f963cd5c",
+        "bytes": 668677
+      },
+      {
+        "path": "dist/qa/build-info.json",
+        "sha256": "691b287de4d2fbd391c56b7ca95ca8bcff7f37fedbae2d05cc4899ec667f478a",
+        "bytes": 217
+      },
+      {
+        "path": "dist/qa/index.html",
+        "sha256": "80089f6f9a4f984fd3060447c1fa06d8e1d5837f584b4c65166056d3abc0c82d",
+        "bytes": 620
+      }
+    ],
+    "online_hash_checks": "4 of 4 matched",
+    "browser_complete": {
+      "source_sha": "1241555d9c88fb2e26039ea15703102cc729a045",
+      "checks": 46,
+      "status": "PASS"
+    },
+    "final_browser_smoke": {
+      "source_sha": "6280ffa25a08c800b3b2cf8645f317f615fd1b7a",
+      "checks": 12,
+      "status": "PASS"
+    },
+    "javascript_identical_to_complete_acceptance": true,
+    "javascript_sha256": "bfa3d1f1b667c8e47cc422ece77b88f9f454920a6c22cce896d9afc2f963cd5c",
+    "android": {
+      "status": "PASS after auto-fix",
+      "device": {
+        "model": "Huawei VOG-L29",
+        "os": "Android 10",
+        "browser": "Chrome 156.0.8078.79"
+      },
+      "complete_functional_build": "1241555d9c88fb2e26039ea15703102cc729a045",
+      "final_verified_build": "6280ffa25a08c800b3b2cf8645f317f615fd1b7a",
+      "method": "Physical-device UI, UI hierarchy and screenshots; no business writes",
+      "scenarios": [
+        "public build-info identity",
+        "first-screen entry summary",
+        "account menu without logout",
+        "mobile navigation",
+        "recent report filter",
+        "detail rules and unverified report labels",
+        "early feedback entry and existing report form",
+        "grade counts and zero-data explanation",
+        "filter-only empty and reset",
+        "Bukit search returns two",
+        "combined empty and recovery retaining search",
+        "detail return retains search",
+        "name-only empty and clear",
+        "unknown fields disclosure",
+        "more actions visibility",
+        "final dark-theme buttons",
+        "default state and existing login preserved"
+      ],
+      "verified_at": "2026-11-04T14:15:36.988Z"
+    },
+    "acceptance_report": "audits/2026-11-04-mobile-implementation/QA-ACCEPTANCE.md",
+    "evidence_directory": "release/20261104-mobile-first/",
+    "cleanup": "No business records written or removed. Default search/filter/menu/form state restored; existing login and data retained."
+  },
+  "intermediate_versions": [
+    {
+      "sha": "724cad9cb3cc965f0afcae8fb2665e01d3905272",
+      "deployment": "d6223114",
+      "result": "Short-screen issue with existing approval and report; fixed, not accepted."
+    },
+    {
+      "sha": "1241555d9c88fb2e26039ea15703102cc729a045",
+      "deployment": "86f94d7e",
+      "result": "Complete functional acceptance passed; native-light secondary button styling then fixed."
+    }
+  ],
+  "production": {
+    "worker": "my",
+    "url": "https://my.pintumasuk.workers.dev/",
+    "deployment": "not_requested_not_performed"
+  },
+  "database_migrations": "none; do not rerun initialization or role bootstrap",
+  "known_limits": [
+    "No business-save or role mutation tests in shared QA during this release.",
+    "Existing authenticated session used; no logout or fresh Google OAuth.",
+    "No full screen-reader/WCAG, performance or external Maps navigation acceptance.",
+    "Existing single JavaScript chunk size warning remains.",
+    "Screenshots and real configuration/build files remain local and ignored."
+  ]
+}
