@@ -1,5 +1,12 @@
 # Masuk 项目交接
 
+## 2026-11-04 回复排序：QA／Android 已验收（最新）
+
+- 应用checkpoint `547b1b21825ba4a2d18d0fc159dbb488d83863e4`已推送main；QA部署`bd88a9a5` Ready／100%，回滚应用`564b632e`。线上四资源哈希匹配本地QA包。
+- reply_sort增量已应用到QA项目`meqmyxaxnpntjlerrxcb`；保留21地点／4帖／13回复，无业务内容写入。Production未发布、未迁移；下方“仅本地”记录为历史。
+- 浏览器10项针对性检查通过，Huawei VOG-L29／Android10真机确认同一SHA，完成最新优先、10＋1拆页、切回最早重置首页，最后恢复默认列表。用户自行解锁后继续，未绕过认证。
+- 冻结应用与报告见`releases/20261104-reply-sort/manifest.json`、`QA-ACCEPTANCE.md`；截图／ZIP／原始哈希仅在忽略目录`release/20261104-reply-sort`。后续文档提交不是新应用版本。
+
 ## 2026-11-04 回复排序：准备 QA 发布（当前任务）
 
 - 用户已授权本次回复排序checkpoint／push main → QA发布 → QA浏览器／真实Android验收，不含Production。

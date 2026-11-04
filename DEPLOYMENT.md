@@ -1,5 +1,9 @@
 # Masuk 部署说明
 
+## 2026-11-04 回复排序 QA 已验收
+
+应用冻结`547b1b21825ba4a2d18d0fc159dbb488d83863e4`，QA Worker masuk部署`bd88a9a5`，回滚`564b632e`。QA项目`meqmyxaxnpntjlerrxcb`已应用reply_sort增量，浏览器和真实Android排序／分页验收通过。报告`releases/20261104-reply-sort/QA-ACCEPTANCE.md`。Production未发布、未迁移；正式发布须另获授权，从本冻结SHA及独立配置构建，部署相应增量，不重跑初始化。
+
 ## 2026-11-04 首页与讨论 QA 已验收
 
 应用冻结`6e2890644d2a2f863187fae2375286a147eec9d0`；QA Worker masuk部署`564b632e`，回滚`28bc44a5`。讨论分页增量已在QA项目`meqmyxaxnpntjlerrxcb`应用，浏览器与真实Android相关只读验收通过。见`releases/20261104-home-discussion/QA-ACCEPTANCE.md`。Production未发布、未迁移；正式发布须另获授权，使用冻结SHA与独立配置，先核对并部署相应增量，不重跑初始化。下方“无数据库迁移”等旧版本说明为历史记录。

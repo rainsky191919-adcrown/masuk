@@ -1,0 +1,25 @@
+{
+  "release_id": "20261104-reply-sort",
+  "release_sha": "547b1b21825ba4a2d18d0fc159dbb488d83863e4",
+  "branch": "main",
+  "frozen_at": "2026-11-04T23:51:09+08:00",
+  "qa": {
+    "worker": "masuk",
+    "url": "https://masuk.pintumasuk.workers.dev/",
+    "project": "meqmyxaxnpntjlerrxcb",
+    "deployment": "bd88a9a5",
+    "status": "Ready 100%",
+    "rollback_deployment": "564b632e",
+    "migration": "20261104160000_reply_sort.sql",
+    "migration_status": "Applied; existing 21 locations, 4 posts, 13 replies preserved",
+    "zip_sha256": "cfb9ec462d2a37dd075371a9961def50479a315b0effd19208e74061921e71f2",
+    "source_tree_sha256": "c04d46fca587d77abcb65aabb7c5a1089f0622af2129a6fc46af6c417ccf4f4f",
+    "online_asset_hashes_match": true,
+    "browser": "PASS: 10 focused checks, no captured console errors",
+    "android": "PASS: Huawei VOG-L29 / Android 10 / Chrome; same build SHA; newest first, 10+1 pages, switch back to oldest resets first page"
+  },
+  "local": "43 discussion browser checks, isolated SQL migration/permissions/sorting, build and preflight passed",
+  "report": "QA-ACCEPTANCE.md",
+  "evidence_directory": "release/20261104-reply-sort",
+  "production": { "status": "Not requested; not deployed; migration not applied" }
+}
