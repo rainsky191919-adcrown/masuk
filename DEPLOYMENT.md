@@ -1,5 +1,9 @@
 # Masuk 部署说明
 
+## 2026-11-04 首页与讨论 QA 已验收
+
+应用冻结`6e2890644d2a2f863187fae2375286a147eec9d0`；QA Worker masuk部署`564b632e`，回滚`28bc44a5`。讨论分页增量已在QA项目`meqmyxaxnpntjlerrxcb`应用，浏览器与真实Android相关只读验收通过。见`releases/20261104-home-discussion/QA-ACCEPTANCE.md`。Production未发布、未迁移；正式发布须另获授权，使用冻结SHA与独立配置，先核对并部署相应增量，不重跑初始化。下方“无数据库迁移”等旧版本说明为历史记录。
+
 ## 最新：2026-11-04 手机优先优化 QA／Android 已验收
 
 最终应用 SHA `6280ffa25a08c800b3b2cf8645f317f615fd1b7a` 已 checkpoint 并推送 main，QA Worker `masuk` 部署 `28bc44a5`（Ready／100%）。完整浏览器46项及Huawei VOG-L29／Android10／Chrome156验收后，最终CSS补修另通过12项浏览器和Android针对性复验；线上4资源哈希匹配本地QA包。详见 `audits/2026-11-04-mobile-implementation/QA-ACCEPTANCE.md` 与 `releases/20261104-mobile-first/manifest.json`。

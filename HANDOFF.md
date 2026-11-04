@@ -1,5 +1,12 @@
 # Masuk 项目交接
 
+## 2026-11-04 首页＋讨论：QA／Android 已验收（最新）
+
+- 用户授权的合并checkpoint／push main → QA发布 → QA浏览器／真实Android验收完成。冻结应用SHA `6e2890644d2a2f863187fae2375286a147eec9d0`，QA部署 `564b632e` Ready／100%，回滚应用 `28bc44a5`；线上四资源哈希匹配。
+- 讨论分页增量已应用到QA项目`meqmyxaxnpntjlerrxcb`，保留21地点／4帖／13回复。没有新增、隐藏或删除业务内容。Production未发布，也未迁移；下方“增量仅本地”是发布前历史状态。
+- 浏览器18项针对性检查通过；Huawei VOG-L29／Android10／Chrome156确认同一SHA，验收首页、规范化搜索、组合筛选、详情和现有11回复10＋1拆页，最后恢复默认列表。线上写入／大于10帖边界未制造数据，相关范围由本地隔离测试覆盖。
+- 报告：`releases/20261104-home-discussion/QA-ACCEPTANCE.md`；Manifest同目录。原始截图／包／哈希记录仅在忽略目录`release/20261104-home-discussion`。后续文档提交不是新的应用版本。
+
 ## 2026-11-04 首页与讨论合并发布：准备 QA（当前任务）
 
 - 用户现已授权所有完成修改 checkpoint／push main → QA发布 → QA浏览器与真实Android验收；不包含Production发布。
