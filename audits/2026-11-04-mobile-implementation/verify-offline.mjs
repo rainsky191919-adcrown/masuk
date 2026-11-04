@@ -33,6 +33,7 @@ try {
  await page.locator('.location-card').first().locator('.card-more > summary').click()
  await expect(page.locator('.location-card').first().getByRole('button',{name:'修改资料',exact:true})).toBeVisible()
  check('secondary actions accessible in more',true)
+ check('secondary buttons use dark-theme background',await page.locator('.location-card').first().getByRole('button',{name:'复制规则',exact:true}).evaluate(e=>getComputedStyle(e).backgroundColor==='rgba(0, 0, 0, 0)'))
  await page.locator('.advanced-filters > summary').click()
  await page.getByRole('button',{name:'很顺畅 0',exact:true}).click()
  await expect(page.locator('.location-card')).toHaveCount(0)
