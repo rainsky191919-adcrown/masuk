@@ -86,6 +86,13 @@ try {
  await expect(page.locator('.older-reports')).toContainText('外卖配送')
  check('older original reports remain readable',true)
  await page.getByRole('button',{name:/^返回地点列表/}).click()
+ const approved={...mockLocations[0],accuracy_votes:[{id:'local-approval'}]}
+ await page.evaluate(approved=>localStorage.setItem('masuk-local-places-v1',JSON.stringify([approved])),approved)
+ await load(fixture(1))
+ for(const width of [320,390]){await page.setViewportSize({width,height:674});const box=await page.locator('.unknown-summary').first().boundingBox();check(`approval and recent report ${width} first-screen requirements`,box.y+box.height<=674)}
+ await page.locator('.location-card').first().locator('.card-extra > summary').click()
+ await expect(page.locator('.location-card').first().locator('.verified-count')).toContainText('1 人认可资料')
+ check('approval metadata retained in disclosure',true)
  const known={...mockLocations[0],entry_requirements:{...mockLocations[0].entry_requirements,need_ic:true,need_qr:false,fee_required:true,bike_allowed:false}}
  await page.evaluate(known=>localStorage.setItem('masuk-local-places-v1',JSON.stringify([known])),known)
  await page.reload()

@@ -689,13 +689,14 @@ function LocationCard({ community, onOpen, location, copyRules, onEdit, showToas
           <h2><button className="card-title-button" onClick={() => onOpen(location)}>{location.name}</button></h2>
           <div className="location-meta"><MapPin size={14} /> {location.area} <span className="meta-divider" /> {location.address}</div>
         </div>
-        <div className={`verified-count${approvalCount ? '' : ' verified-count-empty'}`} title="仅表示当前版本资料认可，与通关评分分开计算">{approvalCount > 0 && <Check size={13} />} {approvalCount ? `${approvalCount} 人认可资料` : '资料暂无认可'}</div>
       </div>
 
       <CardEntrySummary location={location} />
       <Friendliness compact location={location} feedback={community.feedback} />
 
-      <details className="card-extra"><summary>避坑贴士与资料来源</summary><div className="tips-box">
+      <details className="card-extra"><summary>避坑贴士与资料来源</summary>
+        <div className={`verified-count${approvalCount ? '' : ' verified-count-empty'}`} title="仅表示当前版本资料认可，与通关评分分开计算">{approvalCount > 0 && <Check size={13} />} {approvalCount ? `${approvalCount} 人认可资料` : '资料暂无认可'}</div>
+        <div className="tips-box">
         <Lightbulb size={16} />
         <div><span>司机避坑贴士</span><p>{location.tips}</p></div>
       </div>
