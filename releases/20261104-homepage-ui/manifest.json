@@ -2,29 +2,62 @@
   "release_id": "20261104-homepage-ui",
   "timezone": "Asia/Kuala_Lumpur",
   "scope": "Eight homepage UX improvements and horizontal-filter reset visibility fix",
-  "status": "local_verified_pending_checkpoint_and_qa",
+  "status": "qa_accepted_frozen_pending_production_authorization",
   "base_sha": "b18427a96d35099660a6f3a3b181b9134046ee46",
-  "checkpoint_sha": null,
-  "frozen_release_sha": null,
+  "checkpoint_sha": "343058232ccf5233aee7ae2911c5887e7fbac83d",
+  "frozen_release_sha": "343058232ccf5233aee7ae2911c5887e7fbac83d",
   "remote_branch": "rainsky191919-adcrown/masuk:main",
   "local": {
     "homepage_checks": "passed 25 cases via npm run test:homepage",
     "admin_regression": "passed 40 groups via npm run test:admin",
     "build_config": "passed 4 cases via npm run test:build-config",
     "targeted_filter_reset_browser_checks": "passed 19 checks; 320px, 390px and desktop",
-    "qa_build_and_preflight": "passed before checkpoint; must rebuild after checkpoint",
+    "qa_build_and_preflight": "passed from checkpoint; source and dependencies unchanged after acceptance",
     "acceptance_report": "audits/2026-11-04-homepage-design/regression/REPORT.md"
   },
   "qa": {
     "url": "https://masuk.pintumasuk.workers.dev/",
     "worker": "masuk",
     "supabase_project": "meqmyxaxnpntjlerrxcb",
-    "previous_release_record": "0f68edb0; reverify before deployment",
-    "deployment_version": null,
-    "source_sha": null,
-    "artifact_sha256": null,
-    "browser_acceptance": "not_yet_performed_for_this_release",
-    "real_android_acceptance": "not_yet_performed_for_this_release"
+    "previous_release_record": "0f68edb0; reverified in the approved Cloudflare account before upload",
+    "deployment_version": "53e0df19",
+    "source_sha": "343058232ccf5233aee7ae2911c5887e7fbac83d",
+    "artifact_sha256": "9011517fc27cdbbe138fc85fa4af2d2e9c9e16f959e0176d0c3f31e9524ac78f",
+    "browser_acceptance": "passed 33 checks on real shared QA; desktop, 390px and 320px; no business writes",
+    "real_android_acceptance": "passed on physical Huawei VOG-L29 / Android 10 / Chrome 156.0.8078.79; version, menu, search, both empty states, three filter recovery paths, unchanged-all reset edge, card reading, disclosure and detail return",
+    "previous_verified_deployment": "0f68edb0",
+    "deployment_status": "Ready / 100%",
+    "android_device": {
+      "model": "Huawei VOG-L29",
+      "os": "Android 10",
+      "browser": "Chrome 156.0.8078.79"
+    },
+    "cleanup": "No locations, approvals, posts, reports, feedback or roles were written; original records preserved; default queries/menu restored on both devices",
+    "accepted_at": "2026-11-04T09:30:51.006Z",
+    "acceptance_report": "audits/2026-11-04-homepage-design/QA-ACCEPTANCE.md",
+    "evidence_directory": "release/20261104-homepage-ui/ (ignored; screenshots and build files not committed)",
+    "assets": [
+      {
+        "path": "dist/qa/assets/index-D2OSBDth.css",
+        "sha256": "467683d41125742751c79ae4ef22d3b4976e3155a7a2ac41d01976f464cc6389",
+        "bytes": 74586
+      },
+      {
+        "path": "dist/qa/assets/index-SA5JgVtl.js",
+        "sha256": "7ae7757c4d9a587c740041208fd41903a50e9042a3e386ba5eeae46fc2e1bdcd",
+        "bytes": 665271
+      },
+      {
+        "path": "dist/qa/build-info.json",
+        "sha256": "b98ff5edaabd87810056cef1a9d02aba18126d6d9f24a67049361b7102e875b6",
+        "bytes": 217
+      },
+      {
+        "path": "dist/qa/index.html",
+        "sha256": "c7e0cccf3e53cbf87256c05f326803c6157ae744d5535ba8e07e3454a7737490",
+        "bytes": 620
+      }
+    ]
   },
   "production": {
     "url": "https://my.pintumasuk.workers.dev/",
@@ -34,8 +67,20 @@
   },
   "database_migrations": "none; do not rerun initialization or role bootstrap",
   "known_limits": [
-    "Existing single JavaScript chunk size warning remains",
-    "Real Android and cloud data behavior require this release's QA verification",
-    "Screenshots, real environment files and build assets remain local only"
+    "Existing single JavaScript chunk size warning remains; no performance benchmark",
+    "Physical Android usable browser height is shorter; full first-card rules require scrolling",
+    "390x844 simulation shows four core requirements; supplementary warning may require slight scrolling with existing approvals",
+    "No real screen-reader, complete WCAG, 200% zoom or live failure injection acceptance",
+    "No actual location saves, role changes, feedback writes or external Maps navigation during this release acceptance",
+    "Screenshots, real environment files and build assets remain local only",
+    "Production was not authorized or deployed; it requires the frozen source SHA and separate Production configuration"
+  ],
+  "frozen_at": "2026-11-04T09:30:51.006Z",
+  "source_tree_sha256": "0c5fabca18a95e206041ef029951c663566a0f537485fb5e6852632ce48b3d71",
+  "recovered_technical_issues": [
+    "Restricted DNS during remote query; approved network path verified and pushed main",
+    "ADB daemon startup required the existing approved elevated execution path",
+    "Old Cloudflare connector identity rejected; correct existing browser account used after identity verification",
+    "Android IME candidate required explicit confirmation before checking actual search results"
   ]
 }

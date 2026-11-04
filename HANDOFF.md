@@ -1,5 +1,16 @@
 # Masuk 项目交接
 
+## 2026-11-04 首页优化：QA 浏览器与真实 Android 验收完成（最新）
+
+- 本轮应用 checkpoint：343058232ccf5233aee7ae2911c5887e7fbac83d，已推送 main 并核对远端一致。QA 验收后冻结同一应用 SHA；本段后续文档提交不改变已验收应用版本。
+- QA Worker masuk 部署 53e0df19，Ready / 100%；发布前核实的回滚目标 0f68edb0。线上及 Android 公开 build-info 均确认上述 SHA、QA 项目 meqmyxaxnpntjlerrxcb 和共享模式。ZIP SHA256：9011517fc27cdbbe138fc85fa4af2d2e9c9e16f959e0176d0c3f31e9524ac78f。
+- 发布前本地 25 项首页、40 组后台、4 项构建配置检查通过；checkpoint 后 QA 构建及预检通过，源码指纹 0c5fabca18a95e206041ef029951c663566a0f537485fb5e6852632ce48b3d71。QA 浏览器 33 项检查通过。
+- 真实 Android：Huawei VOG-L29／Android 10／Chrome 156.0.8078.79。确认同一版本、真实搜索、触摸横滑、三个筛选恢复入口及全部值未变的重置边界、纯搜索空态、卡片／折叠说明、详情返回及按钮布局。最终恢复空搜索、全部筛选、关闭菜单、页面顶部。
+- 真机可用高度较短，完整进门规则仍需滚动；390 × 844 模拟视口四项核心要求可见，不能推广为所有真机首屏保证。无屏幕阅读器／完整 WCAG／性能验收。
+- 本轮未修改真实地点、角色、帖子、举报、反馈或认可，无新增业务测试数据；保留既有 1 人认可等资料。无数据库迁移，不重跑初始化或引导。Cloudflare 旧 connector 未使用，发布在已核对的正确浏览器账号完成。
+- 完整记录：audits/2026-11-04-homepage-design/QA-ACCEPTANCE.md、releases/20261104-homepage-ui/manifest.json。截图与包只保存在忽略目录 release/20261104-homepage-ui；不提交环境、截图、凭据或构建产物。
+- 用户本轮授权截至 QA 发布与验收；Production 未发布。下一步仅在单独授权后，从上述冻结应用 SHA 使用 Production 配置构建，核对 Worker my 及正式回滚点，再执行发布和最小 smoke。
+
 ## 2026-11-04 首页优化：本地通过，准备 checkpoint 与 QA 验收
 
 - 本轮用户授权：将所有已完成修改 Git checkpoint + push main → QA 发布 → QA 浏览器／真实 Android 验收；不包含 Production 发布。

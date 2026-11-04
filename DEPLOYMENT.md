@@ -1,5 +1,11 @@
 # Masuk 部署说明
 
+## 最新：2026-11-04 首页优化 QA 已验收，正式发布待单独授权
+
+首页 8 项优化及筛选回位修复已 checkpoint 并推送 main。应用冻结 SHA 为 343058232ccf5233aee7ae2911c5887e7fbac83d，QA Worker masuk 当前部署 53e0df19，回滚目标 0f68edb0。QA 浏览器与 Huawei VOG-L29／Android 10／Chrome 156 真机验收完成，证据边界见 audits/2026-11-04-homepage-design/QA-ACCEPTANCE.md，发布记录见 releases/20261104-homepage-ui/manifest.json。
+
+后续文档提交不是新的应用版本；未发布 Production。只有另获正式授权后，才从本次冻结应用 SHA 和独立 Production 配置构建，不上传 QA 包，不重跑数据库初始化。下方旧发布阶段保留为历史记录。
+
 ## 当前状态：新版 QA / 真机验收通过，待单独授权正式发布（2026-11-04）
 
 应用源码已在 `f6c5a54f2d16e95e044a3fe63771692c2bcbfa52` checkpoint 并推送，QA 部署 `0f68edb0` 完成桌面与 Huawei VOG-L29（Android 10 / Chrome 156.0.8078.79）验收。测试帖和回复均已隐藏，测试举报已处理，待处理为 0；无真实角色或地点变更。已冻结同一应用 SHA；当前文档提交不构成新的应用版本。
