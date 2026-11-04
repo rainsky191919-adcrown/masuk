@@ -5,6 +5,12 @@ import { auditFixture } from './audit-fixture.mjs'
 export const sharedBackend = import.meta.env.MODE !== 'navigation-local-test'
 export const canModerate = user => ['admin', 'super_admin'].includes(user?.role)
 export const cloudError = error => error.message
+export async function discussionCommand(action) {
+  if (action === 'overview') return command('feed')
+  if (action === 'posts') return {items:[],total:0,page:1,pages:1,counts:{'全部':0}}
+  if (action === 'replies') return {items:[],total:0,page:1,pages:1}
+  throw new Error('Unexpected discussion read')
+}
 let adminOverride
 export const setAdminFixture = value => { adminOverride = value }
 export async function command(action) {

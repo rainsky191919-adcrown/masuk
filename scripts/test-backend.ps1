@@ -16,7 +16,7 @@ try {
   if (!$ready) { throw 'Local database did not become ready' }
   $files = @('tests/backend-fixture.sql', 'supabase/initial_deployment.sql')
   $files += Get-ChildItem -LiteralPath (Join-Path $taskRoot 'supabase/migrations') -Filter '*.sql' | Sort-Object Name | ForEach-Object { $_.FullName }
-  $files += @('supabase/bootstrap_super_admin.sql', 'tests/backend-permissions.sql')
+  $files += @('supabase/bootstrap_super_admin.sql', 'tests/backend-permissions.sql', 'tests/discussion-pagination.sql')
   foreach ($file in $files) {
     $path = if ([IO.Path]::IsPathRooted($file)) { $file } else { Join-Path $taskRoot $file }
     Get-Content -Raw -Encoding UTF8 -LiteralPath $path | docker exec -i $taskContainer psql -U postgres -v ON_ERROR_STOP=1

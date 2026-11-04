@@ -3,6 +3,13 @@ import { hasSupabaseConfig, supabase } from './supabase'
 export const sharedBackend = hasSupabaseConfig && import.meta.env.VITE_SHARED_BACKEND === 'true'
 export const canModerate = user => ['admin', 'super_admin'].includes(user?.role)
 
+export async function discussionCommand(action, payload = {}) {
+  if (!sharedBackend) throw new Error('共享后台尚未启用')
+  const { data, error } = await supabase.rpc('masuk_discussion', { action, payload })
+  if (error) throw error
+  return data
+}
+
 export async function command(action, payload = {}) {
   if (!sharedBackend) throw new Error('共享后台尚未启用')
   const { data, error } = await supabase.rpc('masuk_command', { action, payload })

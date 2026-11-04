@@ -1,11 +1,10 @@
 import { useRef, useState } from 'react'
-import { ArrowLeft, ArrowUpRight, Clipboard, MapPin, MessageSquare, Plus, ShieldCheck, Info, Flag, ThumbsUp, Trash2, Pin } from 'lucide-react'
+import { ArrowLeft, Clipboard, MapPin, ShieldCheck, Info } from 'lucide-react'
 import AccuracyPanel from './AccuracyPanel'
 import { difficultyMeta } from '../data.skudai'
 import { requirement, summarize } from '../lib/community'
-import { canModerate } from '../lib/sharedBackend'
+import Discussion from './Discussion'
 
-const types = ['提问', '经验分享', '规则变化']
 const dateText = date => new Date(date).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 const localDate = value => { const date = new Date(value); return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10) }
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)
@@ -31,31 +30,18 @@ export function Friendliness({ location, feedback, compact = false }) {
   </div>
 }
 
-export default function LocationDetail({ location, community, saveCommunity, shared = false, onAction, user, onBack, onLogin, copyRules, showToast, onEdit, onApprove }) {
-  const [tab, setTab] = useState('全部')
-  const [sort, setSort] = useState('latest')
-  const [replyTo, setReplyTo] = useState(null)
-  const [expanded, setExpanded] = useState([])
+export default function LocationDetail({ location, community, saveCommunity, shared = false, onAction, user, onBack, onLogin, copyRules, showToast, onEdit, onApprove, entry, discussionMemory }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
-  const [discussionOpen, setDiscussionOpen] = useState(false)
   const feedbackRef = useRef(null)
-  const discussionRef = useRef(null)
   function openFeedback() {
     setFeedbackOpen(true)
     requestAnimationFrame(() => { feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); feedbackRef.current?.querySelector('select')?.focus({ preventScroll: true }) })
   }
-  function openDiscussion() {
-    setDiscussionOpen(true)
-    requestAnimationFrame(() => { discussionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); titleRef.current?.focus({ preventScroll: true }) })
-  }
-  const titleRef = useRef(null)
   const actionLock = useRef(false)
   const [busy, setBusy] = useState(false)
-  const posts = community.posts.filter(post => post.locationId === location.id)
   const allReports = community.feedback.filter(item => item.locationId === location.id).sort((a, b) => b.visitedAt.localeCompare(a.visitedAt))
   const reports = allReports.filter(item => Date.now() - new Date(item.visitedAt).getTime() <= 30 * 86400000 && new Date(item.visitedAt).getTime() <= Date.now())
   const currentReport = allReports.find(item => item.authorId === user?.id)
-  const visiblePosts = posts.filter(post => tab === '全部' || post.type === tab).sort((a, b) => Number(b.pinned) - Number(a.pinned) || (sort === 'helpful' ? b.helpful.length - a.helpful.length : new Date(b.activityAt) - new Date(a.activityAt)))
   const rules = location.entry_requirements
   const requireUser = () => { if (user) return true; showToast('请先使用顶部登录后发言'); return false }
   async function act(action, payload) {
@@ -66,60 +52,9 @@ export default function LocationDetail({ location, community, saveCommunity, sha
   }
   async function reportContent(id, targetType = 'post') {
     if (!requireUser()) return
-    if (!shared) {
-      if (targetType !== 'post') return showToast('此举报功能需要共享后台')
-      if (updatePost(id, item => ({ ...item, reports: [...item.reports, user.id] }))) showToast('已在本机标记举报，尚未发送至管理员')
-      return
-    }
+    if (!shared) return showToast('此举报功能需要共享后台')
     const reason = window.prompt('请说明举报原因，请勿填写证件或住户隐私')
     if (reason?.trim() && await act('report', { id, targetType, reason: reason.trim() })) showToast('举报已提交至管理员')
-  }
-  function helpful(post) {
-    if (!requireUser()) return
-    if (shared) return act('helpful', { id: post.id, enabled: !post.helpful.includes(user.id) })
-    updatePost(post.id, item => ({ ...item, helpful: item.helpful.includes(user.id) ? item.helpful.filter(id => id !== user.id) : [...item.helpful, user.id] }))
-  }
-  function pin(post) {
-    if (shared) return act('pin', { id: post.id, enabled: !post.pinned })
-    updatePost(post.id, item => ({ ...item, pinned: !item.pinned }))
-  }
-  async function deleteReply(post, reply) {
-    if (!window.confirm('删除这条回复？')) return
-    if (shared) { await act('delete_reply', { id: reply.id }); return }
-    updatePost(post.id, item => ({ ...item, replies: item.replies.filter(value => value.id !== reply.id) }))
-  }
-  async function submitPost(event) {
-    event.preventDefault()
-    if (!requireUser()) return
-    const form = event.currentTarget
-    const data = new FormData(form)
-    const title = data.get('title').trim(), body = data.get('body').trim()
-    if (!title || !body) return showToast('标题和内容不能只填写空格')
-    if (shared) {
-      if (await act('post', { locationId: location.id, type: data.get('type'), title, body, visitDate: data.get('visitDate'), service: data.get('service') })) { form.reset(); setTab('全部'); showToast('帖子已保存至云端') }
-      return
-    }
-    const now = new Date().toISOString()
-    const post = { id: crypto.randomUUID(), locationId: location.id, authorId: user.id, author: user.name, type: data.get('type'), title, body, visitDate: data.get('visitDate'), service: data.get('service'), createdAt: now, activityAt: now, replies: [], helpful: [], reports: [], pinned: false }
-    if (saveCommunity({ ...community, posts: [post, ...community.posts] })) { event.currentTarget.reset(); setTab('全部'); showToast('帖子已保存在此浏览器'); }
-  }
-  function updatePost(id, change) { return saveCommunity({ ...community, posts: community.posts.map(post => post.id === id ? change(post) : post) }) }
-  async function deletePost(post) {
-    if (user?.id !== post.authorId || !window.confirm('删除这篇帖子及其回复？')) return
-    if (shared) { await act('delete_post', { id: post.id }); return }
-    saveCommunity({ ...community, posts: community.posts.filter(item => item.id !== post.id) })
-  }
-  async function submitReply(event, post) {
-    event.preventDefault()
-    if (!requireUser()) return
-    const body = new FormData(event.currentTarget).get('reply').trim()
-    if (!body) return showToast('请填写回复内容')
-    if (shared) {
-      if (await act('reply', { id: post.id, body })) { setReplyTo(null); setExpanded([...expanded, post.id]); showToast('回复已保存至云端') }
-      return
-    }
-    const now = new Date().toISOString()
-    if (updatePost(post.id, item => ({ ...item, activityAt: now, replies: [...item.replies, { id: crypto.randomUUID(), authorId: user.id, author: user.name, body, createdAt: now }] }))) { setReplyTo(null); setExpanded([...expanded, post.id]); showToast('回复已保存') }
   }
   async function submitFeedback(event) {
     event.preventDefault()
@@ -161,19 +96,10 @@ export default function LocationDetail({ location, community, saveCommunity, sha
       <section className="detail-panel" ref={feedbackRef}><ShieldCheck className="sidebar-icon" size={25} /><h2>我刚去过</h2><p className="muted">留下实际通关体验，帮下一位少绕路。</p><button className="outline-action" onClick={() => setFeedbackOpen(!feedbackOpen)} aria-expanded={feedbackOpen}>{currentReport ? '更新我的通关反馈' : '填写通关反馈'}</button>
         {!user && <button className="outline-action" onClick={onLogin}>登录后补充反馈</button>}{feedbackOpen && <form className="community-form feedback-form" onSubmit={submitFeedback} key={user?.id || 'guest'}><label>通关感受<select name="level" defaultValue={currentReport?.level || 3}>{[1, 2, 3, 4, 5].map(level => <option key={level} value={level}>{difficultyMeta[level].label}</option>)}</select></label><label>到访日期<input name="visitedAt" type="date" required max={today()} defaultValue={currentReport ? localDate(currentReport.visitedAt) : today()} /></label><label>到访时间<input name="time" type="time" required defaultValue={new Date(currentReport?.visitedAt || Date.now()).toTimeString().slice(0, 5)} /></label><label>服务类型<select name="service" defaultValue={currentReport?.service || '外卖配送'}><option>外卖配送</option><option>包裹送货</option><option>接送乘客</option><option>其他</option></select></label>{[['need_qr', '需要顾客 QR'], ['need_ic', '需要证件登记'], ['bike_allowed', '允许骑车进入']].map(([key, label]) => <label key={key}>{label}<select name={key} defaultValue={currentReport?.requirements[key] || '待确认'}><option>待确认</option><option>是</option><option>否</option></select></label>)}<label>现场说明<textarea name="note" rows={3} maxLength={1000} defaultValue={currentReport?.note} placeholder="补充入口、时段和实际流程" /></label><button className="primary-action" type="submit" disabled={!user}>保存反馈</button></form>}
       </section>
-      <section className="detail-panel discussion-section"><div className="section-heading"><h2>司机讨论 <span className="count-chip">{posts.length}</span></h2><button className="primary-action" onClick={openDiscussion}><Plus size={17} /> 发帖子</button></div>
-        <div className="discussion-toolbar"><div className="discussion-tabs" aria-label="讨论类型">{['全部', ...types].map(type => <button key={type} aria-pressed={tab === type} className={tab === type ? 'selected' : ''} onClick={() => setTab(type)}>{type}</button>)}</div><select aria-label="讨论排序" value={sort} onChange={event => setSort(event.target.value)}><option value="latest">最新活动</option><option value="helpful">最多帮助</option></select></div>
-        {!visiblePosts.length && <div className="discussion-empty"><MessageSquare size={28} /><h3>{posts.length ? '这个分类还没有帖子' : '这里的第一条经验，等你来分享'}</h3><p>问问入口怎么走，或留下今天的真实通关经历。</p></div>}
-        {visiblePosts.map(post => <article className="discussion-post" key={post.id}>
-          <div className="post-type"><span>{post.type}</span>{post.pinned && <span className="pinned"><Pin size={13} />已置顶</span>}</div><h3>{post.title}</h3><p className="post-body">{post.body}</p><div className="post-meta">{post.author} · {dateText(post.createdAt)} · {post.service}{post.visitDate && ` · 到访 ${post.visitDate}`}</div>
-          <div className="post-actions"><button aria-expanded={expanded.includes(post.id)} onClick={() => setExpanded(expanded.includes(post.id) ? expanded.filter(id => id !== post.id) : [...expanded, post.id])}><MessageSquare size={15} /> {post.replies.length} 条回复</button><button disabled={busy} aria-pressed={post.helpful.includes(user?.id)} onClick={() => helpful(post)}><ThumbsUp size={15} /> {post.helpful.length} 人有帮助</button><button onClick={() => reportContent(post.id)} disabled={busy || post.reports.includes(user?.id)}><Flag size={14} />{post.reports.includes(user?.id) ? (shared ? '已举报' : '已标记') : '举报'}</button>{user?.id === post.authorId && <button disabled={busy} onClick={() => deletePost(post)}><Trash2 size={14} />删除</button>}{canModerate(user) && <button disabled={busy} onClick={() => pin(post)}><Pin size={14} />{post.pinned ? '取消置顶' : '置顶'}</button>}</div>
-          {expanded.includes(post.id) && <div className="post-replies">{!post.replies.length && <p className="muted">还没有回复，来聊聊你的经验。</p>}{post.replies.map(reply => <div className="post-reply" key={reply.id}><div className="post-meta">{reply.author} · {dateText(reply.createdAt)}</div><p>{reply.body}</p>{user?.id === reply.authorId && <button disabled={busy} className="text-action" onClick={() => deleteReply(post, reply)}>删除回复</button>}{shared && <button disabled={busy} className="text-action" onClick={() => reportContent(reply.id, 'reply')}>举报回复</button>}</div>)}</div>}
-          <button className="text-action" onClick={() => requireUser() && setReplyTo(replyTo === post.id ? null : post.id)}> {replyTo === post.id ? '取消回复' : '我要回复'} <ArrowUpRight size={13} /></button>{replyTo === post.id && <form className="reply-form" onSubmit={event => submitReply(event, post)}><label>回复内容<textarea name="reply" required maxLength={1500} rows={3} autoFocus /></label><button className="primary-action" type="submit">发布回复</button></form>}
-        </article>)}
-      </section>
+      <Discussion key={user?.id || 'guest'} locationId={location.id} community={community} shared={shared} onAction={onAction} saveCommunity={saveCommunity} user={user} onLogin={onLogin} showToast={showToast} entry={entry} memory={discussionMemory} />
 
     </div><aside className="detail-sidebar">
-      <section className="detail-panel" ref={discussionRef}><h2>发起讨论</h2><button className="outline-action" aria-expanded={discussionOpen} onClick={() => setDiscussionOpen(!discussionOpen)}>{discussionOpen ? "收起发帖表单" : "写一篇讨论"}</button>{discussionOpen && <form className="community-form" onSubmit={submitPost}><label>帖子类型<select name="type">{types.map(type => <option key={type}>{type}</option>)}</select></label><label>标题<input name="title" ref={titleRef} required maxLength={100} placeholder="例如：夜间进门要准备什么？" /></label><label>内容<textarea name="body" required rows={5} maxLength={3000} placeholder="分享到访时间、进门流程和注意事项…" /></label><label>到访日期（选填）<input type="date" name="visitDate" max={today()} /></label><label>服务类型<select name="service"><option>外卖配送</option><option>包裹送货</option><option>接送乘客</option><option>其他</option></select></label><p className="form-hint"><Info size={14} />请勿公开证件及住户隐私。</p>{!user && <button type="button" className="outline-action" onClick={onLogin}>登录后发言</button>}<button className="primary-action" type="submit" disabled={!user}><Plus size={16} />发布帖子</button></form>}</section>
+
       <section className="detail-panel data-note"><Info size={21} /><h3>公开资料 ≠ 司机实测</h3><p>未知信息单独标记，未有足够实测时不推算友好度。单条帖子不会改变等级，现场规则以保安安排为准。</p></section>
     </aside></div>
   </section>

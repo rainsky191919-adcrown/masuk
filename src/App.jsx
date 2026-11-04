@@ -5,6 +5,8 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clipboard,
   Filter,
   Flag,
@@ -30,15 +32,16 @@ import MapPicker from './components/MapPicker'
 import { ChangeList } from './components/AccuracyPanel'
 import { revisionOf, differences, nextRevision, toggleApproval, savePlace, withPlaceLock } from './lib/revisions'
 import { PLACES_KEY, readLocalPlaces, mergeLocalPlaces, validPoint, navigationUrl, nearDuplicates } from './lib/placeStorage'
-import LocationDetail, { Friendliness } from './components/LocationDetail'
+import LocationDetail from './components/LocationDetail'
 import { COMMUNITY_KEY, readCommunity, requirement, summarize } from './lib/community'
-import { sharedBackend, command, canModerate, cloudError } from './lib/sharedBackend'
+import { sharedBackend, command, discussionCommand, canModerate, cloudError } from './lib/sharedBackend'
 import CloudAdmin from './components/CloudAdmin'
 import AdminLocationList from './components/AdminLocationList'
 import AdminSectionNav from './components/AdminSectionNav'
 import AdminLocationActions from './components/AdminLocationActions'
 import BrowseEmptyState from './components/BrowseEmptyState'
-import CardEntrySummary from './components/CardEntrySummary'
+import CardEntrySummary, { CardSourceNotes } from './components/CardEntrySummary'
+import { matchesPlaceQuery, suggestPlaces } from './lib/placeSearch'
 import BoardStatus from './components/BoardStatus'
 
 function formatUpdated(dateString) {
@@ -68,6 +71,8 @@ function App() {
   const [community, setCommunity] = useState(() => sharedBackend ? { posts: [], feedback: [] } : readCommunity())
   const [selectedLocationId, setSelectedLocationId] = useState(null)
   const [browseScroll, setBrowseScroll] = useState(0)
+  const [detailEntry, setDetailEntry] = useState('rules')
+  const discussionMemory = useRef({})
   function saveCommunity(next) {
     try { localStorage.setItem(COMMUNITY_KEY, JSON.stringify(next)); setCommunity(next); return true }
     catch { showToast('浏览器未能保存，请检查存储空间后重试'); return false }
@@ -76,6 +81,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [area, setArea] = useState('全部区域')
   const [difficulty, setDifficulty] = useState('all')
+  const [recentOnly, setRecentOnly] = useState(false)
   const [locations, setLocations] = useState(() => sharedBackend ? [] : mergeLocalPlaces(mockLocations))
   const selectedLocation = locations.find(item => item.id === selectedLocationId)
   const [dataSource, setDataSource] = useState(hasSupabaseConfig ? 'connecting' : 'mock')
@@ -99,7 +105,23 @@ function App() {
   const isAdminUser = canModerate(currentUser)
   const isAdminEdit = Boolean(editingLocation && editOrigin?.view === 'admin' && isAdminUser)
   const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 20
+  const [mobileBrowse, setMobileBrowse] = useState(() => window.matchMedia?.('(max-width: 600px)').matches || false)
+  const pageSize = mobileBrowse ? 10 : 20
+  useEffect(() => {
+    const media = window.matchMedia?.('(max-width: 600px)')
+    if (!media) return
+    let previous = media.matches
+    const resize = () => {
+      const next = media.matches
+      if (next === previous) return
+      const oldSize = previous ? 10 : 20, nextSize = next ? 10 : 20
+      previous = next
+      setMobileBrowse(next)
+      setCurrentPage(page => Math.floor((page - 1) * oldSize / nextSize) + 1)
+    }
+    media.addEventListener('change', resize)
+    return () => media.removeEventListener('change', resize)
+  }, [])
   const [toast, setToast] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuButtonRef = useRef(null)
@@ -125,13 +147,17 @@ function App() {
   }, [activeView])
 
   async function refreshShared() {
-    const [feed, places] = await Promise.all([command('feed'), fetchLocations()])
+    const [feed, places] = await Promise.all([discussionCommand('overview'), fetchLocations()])
     if (places.error) throw places.error
     setCommunity(feed); setLocations(places.data); setDataSource('supabase')
   }
   async function communityAction(action, payload) {
-    try { await command(action, payload); await refreshShared(); return true }
+    let result
+    try { result = await command(action, payload) }
     catch (error) { showToast(cloudError(error)); return false }
+    try { await refreshShared() }
+    catch { showToast('操作已保存，列表刷新失败，请重试刷新') }
+    return result
   }
   useEffect(() => {
     if (!sharedBackend) return
@@ -140,7 +166,7 @@ function App() {
       if (loading) return
       loading = true
       try {
-        const [role, feed, places] = await Promise.all([command('role'), command('feed'), fetchLocations()])
+        const [role, feed, places] = await Promise.all([command('role'), discussionCommand('overview'), fetchLocations()])
         if (!active) return
         if (places.error) throw places.error
         setCurrentUser(user => user ? { ...user, role: role.role } : null)
@@ -230,22 +256,21 @@ function App() {
   }, [])
 
   const filteredLocations = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
     return locations.filter((location) => {
-      const matchesQuery = !normalizedQuery || [location.name, location.area, location.address].some((value) => value.toLowerCase().includes(normalizedQuery))
+      const matchesQuery = matchesPlaceQuery(location, query)
       const matchesArea = area === '全部区域' || location.area === area
       const summary = summarize(location, community.feedback)
-      const matchesDifficulty = difficulty === 'all' || (difficulty === 'recent' ? summary.count > 0 : summary.level === Number(difficulty))
-      return matchesQuery && matchesArea && matchesDifficulty
+      const matchesDifficulty = difficulty === 'all' || summary.level === Number(difficulty)
+      return matchesQuery && matchesArea && matchesDifficulty && (!recentOnly || summary.count > 0)
     })
-  }, [area, difficulty, locations, query, community.feedback])
+  }, [area, difficulty, recentOnly, locations, query, community.feedback])
 
   const totalPages = Math.max(1, Math.ceil(filteredLocations.length / pageSize))
   const visibleLocations = filteredLocations.slice((Math.min(currentPage, totalPages) - 1) * pageSize, Math.min(currentPage, totalPages) * pageSize)
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [query, area, difficulty])
+  }, [query, area, difficulty, recentOnly])
 
   function showToast(message) {
     setToast(message)
@@ -266,6 +291,7 @@ function App() {
     setQuery('')
     setArea('全部区域')
     setDifficulty('all')
+    setRecentOnly(false)
   }
 
   async function handleGoogleLogin() {
@@ -529,13 +555,16 @@ function App() {
         </section>}
 
         {activeView === 'detail' && selectedLocation ? (
-          <LocationDetail key={selectedLocation.id} location={selectedLocation} community={community} saveCommunity={saveCommunity} shared={sharedBackend} onAction={communityAction} user={currentUser} onLogin={handleGoogleLogin} copyRules={copyRules} showToast={showToast} onEdit={openEdit} onApprove={approveLocation} onBack={() => { setActiveView('browse'); requestAnimationFrame(() => window.scrollTo(0, browseScroll)) }} />
+          <LocationDetail entry={detailEntry} discussionMemory={discussionMemory} key={selectedLocation.id} location={selectedLocation} community={community} saveCommunity={saveCommunity} shared={sharedBackend} onAction={communityAction} user={currentUser} onLogin={handleGoogleLogin} copyRules={copyRules} showToast={showToast} onEdit={openEdit} onApprove={approveLocation} onBack={() => { setActiveView('browse'); requestAnimationFrame(() => window.scrollTo(0, browseScroll)) }} />
         ) : activeView === 'browse' ? (
           <BrowseView
             locations={locations}
+            pageSize={pageSize}
+            recentOnly={recentOnly}
+            setRecentOnly={setRecentOnly}
             onCreate={() => { setEditingLocation(null); setEditConflict(null); setActiveView('contribute') }}
             community={community}
-            onOpen={(location) => { setBrowseScroll(window.scrollY); setSelectedLocationId(location.id); setActiveView('detail'); window.scrollTo(0, 0) }}
+            onOpen={(location, entry = 'rules') => { setDetailEntry(entry); setBrowseScroll(window.scrollY); setSelectedLocationId(location.id); setActiveView('detail'); window.scrollTo(0, 0) }}
             query={query}
             setQuery={setQuery}
             area={area}
@@ -574,14 +603,30 @@ function App() {
   )
 }
 
-function BrowseView({ locations, onCreate, community, onOpen, query, setQuery, area, setArea, difficulty, setDifficulty, filteredLocations, visibleLocations, currentPage, totalPages, setCurrentPage, clearFilters, copyRules, onEdit, showToast }) {
+function BrowseView({ locations, pageSize, recentOnly, setRecentOnly, onCreate, community, onOpen, query, setQuery, area, setArea, difficulty, setDifficulty, filteredLocations, visibleLocations, currentPage, totalPages, setCurrentPage, clearFilters, copyRules, onEdit, showToast }) {
   const availableAreas = [...new Set(locations.map(location => location.area))]
-  const candidates = locations.filter(location => (area === '全部区域' || location.area === area) && [location.name, location.area, location.address].some(value => value.toLowerCase().includes(query.trim().toLowerCase())))
-  const counts = candidates.map(location => summarize(location, community.feedback))
+  const candidates = locations.filter(location => (area === '全部区域' || location.area === area) && matchesPlaceQuery(location, query))
+  const summaries = candidates.map(location => summarize(location, community.feedback))
+  const counts = summaries.filter(summary => !recentOnly || summary.count > 0)
+  const recentCount = summaries.filter(summary => summary.count > 0 && (difficulty === 'all' || summary.level === Number(difficulty))).length
+  const resultsRef = useRef(null)
+  function scrollBrowseTo(element) {
+    if (element) window.scrollTo({ top: Math.max(0, element.getBoundingClientRect().top + window.scrollY - 20) })
+  }
+  function jumpPage(page) {
+    setCurrentPage(page)
+    requestAnimationFrame(() => { scrollBrowseTo(resultsRef.current); resultsRef.current?.focus({ preventScroll: true }) })
+  }
+  const suggestions = !recentOnly && area === '全部区域' && difficulty === 'all' && !filteredLocations.length ? suggestPlaces(locations, query) : []
+  const pagination = position => totalPages > 1 && <nav className={`pagination browse-pagination browse-pagination-${position}`} aria-label={position === 'top' ? '地点分页（顶部）' : '地点分页'}>
+    <button aria-label="上一页" disabled={currentPage === 1} onClick={() => jumpPage(currentPage - 1)}><ChevronLeft size={16} /><span>上一页</span></button>
+    <span>第 {currentPage} / {totalPages} 页{position === 'bottom' && ` · 每页最多 ${pageSize} 个`}</span>
+    <button aria-label="下一页" disabled={currentPage === totalPages} onClick={() => jumpPage(currentPage + 1)}><span>下一页</span><ChevronRight size={16} /></button>
+  </nav>
   const searchInput = useRef(null)
   const difficultyFilters = useRef(null)
   function resetBrowseFilters(keepSearch = false) {
-    if (keepSearch) { setArea('全部区域'); setDifficulty('all') }
+    if (keepSearch) { setArea('全部区域'); setDifficulty('all'); setRecentOnly(false) }
     else clearFilters()
     if (difficultyFilters.current) difficultyFilters.current.scrollLeft = 0
     searchInput.current?.focus()
@@ -593,6 +638,7 @@ function BrowseView({ locations, onCreate, community, onOpen, query, setQuery, a
           <Search size={21} />
           <input
             ref={searchInput}
+            maxLength={100}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="搜公寓、住宅区、街道…"
@@ -611,14 +657,14 @@ function BrowseView({ locations, onCreate, community, onOpen, query, setQuery, a
 
       <section className="filter-zone" aria-label="通关难度筛选">
         <div className="quick-filters">
-          <button className="difficulty-filter" aria-pressed={difficulty === 'all'} onClick={() => setDifficulty('all')}>全部 {candidates.length}</button>
-          <button className="difficulty-filter" aria-pressed={difficulty === 'recent'} onClick={() => setDifficulty('recent')}>有近期反馈 {counts.filter(summary => summary.count > 0).length}</button>
+          <button className="difficulty-filter" aria-pressed={difficulty === 'all' && !recentOnly} onClick={() => { setDifficulty('all'); setRecentOnly(false) }}>全部 {candidates.length}</button>
+          <button className="difficulty-filter" aria-pressed={recentOnly} onClick={() => setRecentOnly(!recentOnly)}>有近期反馈 {recentCount}</button>
         </div>
-        <details className="advanced-filters" open={difficulty !== 'all' && difficulty !== 'recent' ? true : undefined}>
+        <details className="advanced-filters" open={difficulty !== 'all' ? true : undefined}>
         <summary><Filter size={15} />按友好度筛选</summary>
-        <p className="filter-explanation">待确认表示尚无足够评分；0 个表示当前搜索范围暂无该等级地点。</p>
+        <p className="filter-explanation">近期反馈可与等级同时筛选。待确认表示尚无足够评分；数量按当前搜索、区域和近期反馈条件计算。</p>
         <div ref={difficultyFilters} className="difficulty-filters" role="group" aria-label="选择通关友好度">
-          <button aria-pressed={difficulty === 'all'} className={difficulty === 'all' ? 'difficulty-filter active-filter' : 'difficulty-filter'} onClick={() => setDifficulty('all')}>全部</button>
+          <button aria-pressed={difficulty === 'all'} className={difficulty === 'all' ? 'difficulty-filter active-filter' : 'difficulty-filter'} onClick={() => setDifficulty('all')}>全部等级 {counts.length}</button>
           {Object.entries(difficultyMeta).map(([level, meta]) => (
             <button key={level} aria-pressed={difficulty === level} className={`difficulty-filter ${meta.className} ${difficulty === level ? 'active-filter' : ''}`} onClick={() => setDifficulty(level)}>
               <span className="filter-dot" aria-hidden="true" /> {meta.label} {counts.filter(summary => summary.level === Number(level)).length}
@@ -629,15 +675,20 @@ function BrowseView({ locations, onCreate, community, onOpen, query, setQuery, a
       </section>
 
       <div className="result-toolbar">
-        <div role="status" aria-atomic="true">
+        <div ref={resultsRef} tabIndex={-1} role="status" aria-atomic="true">
           <span className="result-count">{filteredLocations.length}</span>
-          <span className="result-label">个情报点匹配</span>
+          <span className="result-label">个地点</span>
         </div>
-        {(query || area !== '全部区域' || difficulty !== 'all') && (
+        {pagination('top')}
+        {(query || area !== '全部区域' || difficulty !== 'all' || recentOnly) && (
           <button className="reset-button" onClick={() => resetBrowseFilters()}><RefreshCcw size={14} /> 重置筛选</button>
         )}
       </div>
 
+      {(recentOnly || difficulty !== 'all') && <div className="active-browse-filters" aria-label="已选筛选条件">
+        {recentOnly && <button onClick={() => setRecentOnly(false)} aria-label="清除近期反馈条件">近30天有反馈 ×</button>}
+        {difficulty !== 'all' && <button onClick={() => setDifficulty('all')} aria-label="清除友好度条件">{difficultyMeta[difficulty].label} ×</button>}
+      </div>}
       {filteredLocations.length > 0 ? (
         <section className="location-grid">
           {visibleLocations.map((location) => (
@@ -647,20 +698,17 @@ function BrowseView({ locations, onCreate, community, onOpen, query, setQuery, a
       ) : (
         <BrowseEmptyState
           query={query}
-          hasFilters={area !== '全部区域' || difficulty !== 'all'}
+          suggestions={suggestions}
+          onSuggestion={location => { setQuery(location.name); searchInput.current?.focus() }}
+          hasFilters={area !== '全部区域' || difficulty !== 'all' || recentOnly}
           onClearFilters={() => resetBrowseFilters(true)}
           onClearSearch={() => { setQuery(''); searchInput.current?.focus() }}
           onCreate={onCreate}
         />
       )}
 
-      {totalPages > 1 && (
-        <nav className="pagination" aria-label="地点分页">
-          <button disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>上一页</button>
-          <span>第 {currentPage} / {totalPages} 页 · 每页最多 {20} 个</span>
-          <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>下一页</button>
-        </nav>
-      )}
+      {pagination('bottom')}
+      {filteredLocations.length > 0 && <button className="back-to-search" onClick={() => { scrollBrowseTo(searchInput.current); searchInput.current?.focus({ preventScroll: true }) }}>回到搜索</button>}
     </>
   )
 }
@@ -670,14 +718,15 @@ function LocationCard({ community, onOpen, location, copyRules, onEdit, showToas
   const meta = difficultyMeta[summary.level]
   const approvalCount = location.accuracy_votes?.length || 0
   const imported = location.last_modified_by === '公开资料导入'
+  const discussionCount = community.postCounts?.[location.id] ?? community.posts.filter(post => post.locationId === location.id).length
   return (
     <article className={`location-card ${meta.className}`} onClick={(event) => { if (!event.target.closest('button, a, input, select, textarea, details') && !window.getSelection()?.toString()) onOpen(location) }}>
       <div className="card-stripe" />
       <div className="card-header">
         <div className="level-badge">
           <span className="level-code">{meta.code}</span>
-          <strong>{meta.label}</strong>
-          <span>{summary.level ? meta.short : summary.count ? '已有实测，待更多确认' : '暂无近期实测'}</span>
+          <strong>{summary.level ? meta.label : '暂未评分'}</strong>
+          <span>{summary.count ? `${summary.count}位司机近期报告` : '暂无近期司机报告'}{summary.disputed && ' · 体验有分歧'}</span>
         </div>
         <button className="flag-button" onClick={() => showToast('收到标记，我们会提醒大家重新核对规则')} aria-label={`标记 ${location.name} 规则可能已变化`}>
           <Flag size={15} />
@@ -691,18 +740,7 @@ function LocationCard({ community, onOpen, location, copyRules, onEdit, showToas
         </div>
       </div>
 
-      <CardEntrySummary location={location} />
-      <Friendliness compact location={location} feedback={community.feedback} />
-
-      <details className="card-extra"><summary>避坑贴士与资料来源</summary>
-        <div className={`verified-count${approvalCount ? '' : ' verified-count-empty'}`} title="仅表示当前版本资料认可，与通关评分分开计算">{approvalCount > 0 && <Check size={13} />} {approvalCount ? `${approvalCount} 人认可资料` : '资料暂无认可'}</div>
-        <div className="tips-box">
-        <Lightbulb size={16} />
-        <div><span>司机避坑贴士</span><p>{location.tips}</p></div>
-      </div>
-      <span className="updated-at">{imported ? '资料导入' : '资料更新'} · {formatUpdated(location.updated_at)}</span></details>
-
-<button className="card-discussion-link" onClick={() => onOpen(location)}><MessageSquarePlus size={16} /> {community.posts.filter(post => post.locationId === location.id).length} 个讨论 <span>查看详情与发言 ↗</span></button>
+      <CardEntrySummary compact location={location} />
       <div className="card-footer">
         <div className="card-actions">
           <button className="copy-button" onClick={() => onOpen(location)}>查看规则</button>
@@ -710,6 +748,19 @@ function LocationCard({ community, onOpen, location, copyRules, onEdit, showToas
           <details className="card-more"><summary>更多</summary><button className="source-link edit-link" onClick={() => onEdit(location)}><Pencil size={13} /> 修改资料</button><button className="source-link" onClick={() => copyRules(location)}><Clipboard size={14} /> 复制规则</button></details>
         </div>
       </div>
+      {summary.latest && <p className="card-report-note">最近到访报告：{formatUpdated(summary.latest)} · 尚未核实</p>}
+      <button className={`card-discussion-link${discussionCount ? '' : ' card-discussion-empty'}`} onClick={() => onOpen(location, 'discussion')}><MessageSquarePlus size={16} /> {discussionCount ? `${discussionCount} 个讨论` : '还没有讨论'} <span>{discussionCount ? '查看司机讨论 ↗' : '补充经验 ↗'}</span></button>
+
+      <details className="card-extra"><summary>贴士与资料来源</summary>
+        <div className={`verified-count${approvalCount ? '' : ' verified-count-empty'}`} title="仅表示当前版本资料认可，与通关评分分开计算">{approvalCount > 0 && <Check size={13} />} {approvalCount ? `${approvalCount} 人认可资料` : '资料暂无认可'}</div>
+        <p className="rating-explanation">{summary.level ? meta.description : '近30天至少3位司机反馈才形成评分，单条报告不会自动确认规则。'}</p>
+        <CardSourceNotes location={location} />
+        <div className="tips-box">
+        <Lightbulb size={16} />
+        <div><span>司机避坑贴士</span><p>{location.tips}</p></div>
+      </div>
+      <span className="updated-at">{imported ? '资料导入' : '资料更新'} · {formatUpdated(location.updated_at)}</span></details>
+
     </article>
   )
 }
